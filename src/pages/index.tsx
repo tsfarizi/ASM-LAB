@@ -120,19 +120,6 @@ export default function IndexPage() {
   const [output, setOutput] = useState<string>(
     "Hasil eksekusi kode akan tampil di sini.",
   );
-  const cheerpxEnvRef = useRef<{
-    linux: LinuxInstance;
-    dataDevice: DataDeviceInstance;
-    dispose: () => void;
-  } | null>(null);
-  const cheerpxInitPromiseRef = useRef<
-    Promise<{
-      linux: LinuxInstance;
-      dataDevice: DataDeviceInstance;
-      dispose: () => void;
-    }>
-  | null>(null);
-  const decoderRef = useRef<TextDecoder | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightContainerRef = useRef<HTMLDivElement>(null);
   const lineNumbersContainerRef = useRef<HTMLDivElement>(null);
@@ -151,28 +138,6 @@ export default function IndexPage() {
     window.localStorage.setItem(STORAGE_KEY, code);
   }, [code]);
 
-  useEffect(() => {
-    handleScroll();
-  }, [code]);
-
-  useEffect(() => {
-    loadCheerpX().catch((error) => {
-      console.error("Gagal memuat CheerpX di awal:", error);
-      setOutput((previous) =>
-        `${previous}\nGagal memuat runtime CheerpX di awal: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      cheerpxEnvRef.current?.dispose();
-      cheerpxEnvRef.current = null;
-    };
-  }, []);
-
   const lineNumbers = useMemo(() => {
     const lines = code.split("\n").length;
     return Array.from({ length: Math.max(lines, 1) }, (_, index) => index + 1);
@@ -180,7 +145,7 @@ export default function IndexPage() {
 
   const highlightedCode = useMemo(() => highlightAsm(code), [code]);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const textarea = textareaRef.current;
     const highlightContainer = highlightContainerRef.current;
     const lineContainer = lineNumbersContainerRef.current;
@@ -194,97 +159,15 @@ export default function IndexPage() {
     if (textarea && lineContainer && lineInner) {
       lineInner.style.transform = `translateY(-${textarea.scrollTop}px)`;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    handleScroll();
+  }, [code, handleScroll]);
 
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setCode(event.target.value);
   };
-
-  const appendOutput = useCallback((chunk: string) => {
-    if (!chunk) return;
-    setOutput((previous) => (previous ? `${previous}${chunk}` : chunk));
-  }, []);
-
-  const ensureCheerpX = useCallback(async () => {
-    if (cheerpxEnvRef.current) {
-      return cheerpxEnvRef.current;
-    }
-
-    if (!cheerpxInitPromiseRef.current) {
-      cheerpxInitPromiseRef.current = (async () => {
-        appendOutput("Menyiapkan lingkungan CheerpX (unduhan pertama kali bisa cukup besar)...\n");
-        const { HttpBytesDevice, IDBDevice, OverlayDevice, DataDevice, Linux } =
-          await loadCheerpX();
-
-        const diskErrors: string[] = [];
-        let blockDevice: Awaited<ReturnType<typeof HttpBytesDevice.create>> | null =
-          null;
-
-        for (const url of CHEERPX_DISK_CANDIDATES) {
-          try {
-            appendOutput(`Mengunduh image CheerpX dari ${url}...\n`);
-            blockDevice = await HttpBytesDevice.create(url);
-            appendOutput("Image berhasil dimuat.\n");
-            break;
-          } catch (error) {
-            const message =
-              error instanceof Error ? error.message : JSON.stringify(error);
-            diskErrors.push(`${url} -> ${message}`);
-            appendOutput(
-              `Gagal memuat image dari ${url}. Mencoba sumber lain...\n`,
-            );
-          }
-        }
-
-        if (!blockDevice) {
-          throw new Error(
-            `Tidak dapat memuat disk image CheerpX:\n${diskErrors.join("\n")}\n\nTips: unduh image dari WebVM lalu letakkan sebagai public/cheerpXImage.ext2 atau gunakan host dengan header Last-Modified/Etag.`,
-          );
-        }
-
-        const idbDevice = await IDBDevice.create("asm-lab-cheerpx");
-        const overlayDevice = await OverlayDevice.create(blockDevice, idbDevice);
-        const dataDevice = await DataDevice.create();
-
-        const mountPoints = [
-          { type: "ext2", path: "/", dev: overlayDevice },
-          { type: "dir", path: "/data", dev: dataDevice },
-          { type: "devs", path: "/dev" },
-          { type: "proc", path: "/proc" },
-        ] as unknown as Array<Record<string, unknown>>;
-
-        const linux = await Linux.create({
-          mounts: mountPoints as any,
-        });
-
-        const decoder =
-          decoderRef.current || (decoderRef.current = new TextDecoder());
-
-        linux.setCustomConsole((buffer) => {
-          const text = decoder.decode(buffer);
-          appendOutput(text);
-        }, 120, 40);
-
-        const dispose = () => {
-          linux.delete();
-          dataDevice.delete();
-          overlayDevice.delete();
-          idbDevice.delete();
-          blockDevice.delete();
-        };
-
-        const environment = { linux, dataDevice, dispose };
-        cheerpxEnvRef.current = environment;
-        appendOutput("Lingkungan CheerpX siap.\n");
-        return environment;
-      })().catch((error) => {
-        cheerpxInitPromiseRef.current = null;
-        throw error;
-      });
-    }
-
-    return cheerpxInitPromiseRef.current;
-  }, [appendOutput]);
 
   const handleRun = useCallback(async () => {
     const trimmed = code.trim();
@@ -294,55 +177,70 @@ export default function IndexPage() {
     }
 
     setIsRunning(true);
-    setOutput("");
+    setOutput("Mengirim kode ke Judge0...");
 
     try {
-      const environment = await ensureCheerpX();
-      const { linux, dataDevice } = environment;
-
-      appendOutput("Menulis berkas ASM...\n");
-      await dataDevice.writeFile("/code.asm", trimmed);
-
-      appendOutput("Menjalankan nasm...\n");
-      const nasmResult = await linux.run(
-        "/usr/bin/nasm",
-        ["-felf32", "/data/code.asm", "-o", "/tmp/program.o"],
-        { env: ["PATH=/usr/bin:/bin"] },
+      const response = await fetch(
+        `${JUDGE0_ENDPOINT}/submissions?base64_encoded=false&wait=true`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source_code: trimmed,
+            language_id: ASM_LANGUAGE_ID,
+          }),
+        },
       );
 
-      if (nasmResult.status !== 0) {
-        appendOutput(`nasm selesai dengan kode keluar ${nasmResult.status}\n`);
-        appendOutput("Periksa kembali sintaks ASM kamu.\n");
-        return;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
 
-      appendOutput("Menautkan objek dengan ld...\n");
-      const ldResult = await linux.run("/usr/bin/ld", [
-        "-m",
-        "elf_i386",
-        "/tmp/program.o",
-        "-o",
-        "/tmp/program",
-      ]);
+      const result = await response.json();
+      const sections: string[] = [];
 
-      if (ldResult.status !== 0) {
-        appendOutput(`ld selesai dengan kode keluar ${ldResult.status}\n`);
-        return;
+      const statusDescription =
+        result?.status?.description ?? "Status tidak diketahui";
+      sections.push(`Status: ${statusDescription}`);
+
+      if (result?.stdout) {
+        sections.push(`Stdout:\n${result.stdout}`);
       }
 
-      appendOutput("Menjalankan program...\n");
-      const runResult = await linux.run("/tmp/program", []);
-      appendOutput(`\nProgram selesai dengan kode keluar ${runResult.status}\n`);
+      if (result?.stderr) {
+        sections.push(`Stderr:\n${result.stderr}`);
+      }
+
+      if (result?.compile_output) {
+        sections.push(`Compiler:\n${result.compile_output}`);
+      }
+
+      if (result?.message) {
+        sections.push(`Pesan: ${result.message}`);
+      }
+
+      if (
+        !result?.stdout &&
+        !result?.stderr &&
+        !result?.compile_output &&
+        !result?.message
+      ) {
+        sections.push("Tidak ada output dari eksekusi.");
+      }
+
+      setOutput(sections.join("\n\n"));
     } catch (error) {
-      appendOutput(
-        `Terjadi kesalahan saat menjalankan CheerpX: ${
+      setOutput(
+        `Terjadi kesalahan saat memanggil Judge0: ${
           error instanceof Error ? error.message : String(error)
-        }\n`,
+        }`,
       );
     } finally {
       setIsRunning(false);
     }
-  }, [appendOutput, code, ensureCheerpX]);
+  }, [code]);
 
   return (
     <DefaultLayout>
@@ -405,11 +303,11 @@ export default function IndexPage() {
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-default-200/80 bg-default-50/90 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-default-100/30 dark:bg-default-100/20">
                 <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-[0_0_0_3px_rgba(59,130,246,0.35)]" />
-                <span>Pastikan program memanggil <code>Linux syscalls</code> atau prosedur yang menghasilkan output.</span>
+                <span>Pastikan program menghasilkan output melalui syscalls yang sesuai.</span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-default-200/80 bg-default-50/90 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-default-100/30 dark:bg-default-100/20">
                 <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-[0_0_0_3px_rgba(59,130,246,0.35)]" />
-                <span>Tekan <strong>Run</strong> untuk merakit, menautkan, dan menjalankan kode melalui CheerpX.</span>
+                <span>Tekan <strong>Run</strong> untuk mengirim kode ke Judge0 dan lihat hasilnya di panel Output.</span>
               </li>
             </ul>
           </div>

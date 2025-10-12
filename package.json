@@ -35,7 +35,6 @@
     "tailwindcss": "4.1.11"
   },
   "devDependencies": {
-    "@leaningtech/cheerpx": "1.1.7",
     "@eslint/compat": "1.2.8",
     "@eslint/eslintrc": "3.3.1",
     "@eslint/js": "9.25.1",
