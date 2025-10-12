@@ -2,8 +2,6 @@
 
 @config "../../tailwind.config.js";
 
-@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap");
-
 :root {
   --font-code: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
@@ -42,4 +40,12 @@
 
 .dark .code-editor-textarea::selection {
   background-color: rgba(96, 165, 250, 0.35);
+}
+
+.code-editor-textarea {
+  caret-color: rgb(30, 41, 59);
+}
+
+.dark .code-editor-textarea {
+  caret-color: rgb(226, 232, 240);
 }
