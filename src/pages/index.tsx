@@ -13,7 +13,8 @@ import DefaultLayout from "@/layouts/default";
 
 const STORAGE_KEY = "asm-lab-editor-code";
 const JUDGE0_ENDPOINT = "http://127.0.0.1:2358";
-const ASM_LANGUAGE_ID = 5;
+// Judge0 language ID for "Assembly (NASM 2.14.02)"
+const ASM_LANGUAGE_ID = 45;
 
 const PlayIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
@@ -128,6 +129,7 @@ export default function IndexPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const cached = window.localStorage.getItem(STORAGE_KEY);
+
     if (cached !== null) {
       setCode(cached);
     }
@@ -140,6 +142,7 @@ export default function IndexPage() {
 
   const lineNumbers = useMemo(() => {
     const lines = code.split("\n").length;
+
     return Array.from({ length: Math.max(lines, 1) }, (_, index) => index + 1);
   }, [code]);
 
@@ -171,8 +174,10 @@ export default function IndexPage() {
 
   const handleRun = useCallback(async () => {
     const trimmed = code.trim();
+
     if (!trimmed) {
       setOutput("Tidak ada kode yang dapat dijalankan.");
+
       return;
     }
 
@@ -203,6 +208,7 @@ export default function IndexPage() {
 
       const statusDescription =
         result?.status?.description ?? "Status tidak diketahui";
+
       sections.push(`Status: ${statusDescription}`);
 
       if (result?.stdout) {
@@ -270,10 +276,10 @@ export default function IndexPage() {
               </div>
               <div className="relative flex-1">
                 <div
+                  dangerouslySetInnerHTML={{ __html: highlightedCode }}
                   ref={highlightContainerRef}
                   aria-hidden
                   className="code-editor-highlight pointer-events-none absolute inset-0 overflow-auto px-5 py-3 font-code text-sm leading-6 whitespace-pre-wrap break-words"
-                  dangerouslySetInnerHTML={{ __html: highlightedCode }}
                 />
                 <textarea
                   ref={textareaRef}
@@ -299,15 +305,23 @@ export default function IndexPage() {
             <ul className="mt-6 space-y-3 text-sm text-default-700 dark:text-default-300">
               <li className="flex items-start gap-3 rounded-2xl border border-default-200/80 bg-default-50/90 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-default-100/30 dark:bg-default-100/20">
                 <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-[0_0_0_3px_rgba(59,130,246,0.35)]" />
-                <span>Tulis program ASM x86 32-bit dengan <code>nasm</code> syntax.</span>
+                <span>
+                  Tulis program ASM x86 32-bit dengan <code>nasm</code> syntax.
+                </span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-default-200/80 bg-default-50/90 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-default-100/30 dark:bg-default-100/20">
                 <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-[0_0_0_3px_rgba(59,130,246,0.35)]" />
-                <span>Pastikan program menghasilkan output melalui syscalls yang sesuai.</span>
+                <span>
+                  Pastikan program menghasilkan output melalui syscalls yang
+                  sesuai.
+                </span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-default-200/80 bg-default-50/90 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-default-100/30 dark:bg-default-100/20">
                 <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-[0_0_0_3px_rgba(59,130,246,0.35)]" />
-                <span>Tekan <strong>Run</strong> untuk mengirim kode ke Judge0 dan lihat hasilnya di panel Output.</span>
+                <span>
+                  Tekan <strong>Run</strong> untuk mengirim kode ke Judge0 dan
+                  lihat hasilnya di panel Output.
+                </span>
               </li>
             </ul>
           </div>
@@ -324,10 +338,10 @@ export default function IndexPage() {
           <Button
             className="h-14 w-full justify-center text-base"
             color="success"
+            isLoading={isRunning}
             size="lg"
             startContent={<PlayIcon className="h-4 w-4" />}
             variant="solid"
-            isLoading={isRunning}
             onPress={handleRun}
           >
             Run
@@ -344,4 +358,3 @@ export default function IndexPage() {
     </DefaultLayout>
   );
 }
-
