@@ -295,8 +295,9 @@ export default function IndexPage() {
             </div>
           </div>
         </div>
-        <aside className="flex h-full flex-col gap-5">
-          <div className="flex flex-1 flex-col rounded-3xl border border-default-200 bg-default-100 p-7 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.45)] dark:border-default-100/50 dark:bg-default-100/15">
+        <aside className="flex h-full flex-col gap-5 lg:h-[680px]">
+          <div className="flex flex-1 flex-col gap-5 overflow-hidden">
+            <div className="flex flex-col rounded-3xl border border-default-200 bg-default-100 p-7 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.45)] dark:border-default-100/50 dark:bg-default-100/15 lg:max-h-[360px] lg:overflow-y-auto">
             <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
               List Tugas
             </h2>
@@ -326,7 +327,7 @@ export default function IndexPage() {
               </li>
             </ul>
           </div>
-          <div className="flex min-h-[180px] flex-col rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.38)] dark:border-default-100/40 dark:bg-default-50/15">
+            <div className="flex flex-1 flex-col rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.38)] dark:border-default-100/40 dark:bg-default-50/15">
             <h3 className="text-base font-semibold text-default-800 dark:text-default-200">
               Output:
             </h3>
@@ -336,7 +337,9 @@ export default function IndexPage() {
               </pre>
             </div>
           </div>
-          <Button
+          </div>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Button
             className="h-14 w-full justify-center text-base"
             color="success"
             isLoading={isRunning}
@@ -347,13 +350,14 @@ export default function IndexPage() {
           >
             Run
           </Button>
-          <Button
+            <Button
             className="h-14 w-full justify-center text-base"
             color="primary"
             size="lg"
           >
             Submit
           </Button>
+          </div>
         </aside>
       </section>
     </DefaultLayout>
