@@ -5,6 +5,6 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "/ASM-Lab/",
+  base: "/ASM-LAB/",
   plugins: [react(), tsconfigPaths(), tailwindcss()],
 });
