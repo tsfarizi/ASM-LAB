@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@config "../../tailwind.config.js";
+
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap");
+
+:root {
+  --font-code: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.font-code {
+  font-family: var(--font-code);
+}
+
+.code-editor-highlight {
+  color: rgb(55 65 81);
+}
+
+.dark .code-editor-highlight {
+  color: rgb(229 231 235);
+}
+
+.code-editor-highlight .token-keyword {
+  color: rgb(129 140 248);
+  font-weight: 600;
+}
+
+.code-editor-highlight .token-register {
+  color: rgb(14 165 233);
+  font-weight: 600;
+}
+
+.code-editor-highlight .token-number {
+  color: rgb(249 115 22);
+  font-weight: 600;
+}
+
+.code-editor-textarea::selection {
+  background-color: rgba(129, 140, 248, 0.35);
+}
+
+.dark .code-editor-textarea::selection {
+  background-color: rgba(96, 165, 250, 0.35);
+}
