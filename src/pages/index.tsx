@@ -13,8 +13,7 @@ import DefaultLayout from "@/layouts/default";
 
 const STORAGE_KEY = "asm-lab-editor-code";
 const JUDGE0_ENDPOINT = "http://127.0.0.1:2358";
-// Judge0 language ID for "Assembly (NASM 2.14.02)"
-const ASM_LANGUAGE_ID = 45;
+const ASM_LANGUAGE_ID = 5;
 
 const PlayIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
