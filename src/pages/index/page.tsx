@@ -1,5 +1,6 @@
 import {
   ChangeEvent,
+  KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -228,6 +229,49 @@ export const IndexPage = () => {
     [codeStorageKey, isPreviewMode],
   );
 
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (
+        event.key !== "Tab" ||
+        event.shiftKey ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      if (isPreviewMode) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const selectionStart = event.currentTarget.selectionStart ?? 0;
+      const selectionEnd = event.currentTarget.selectionEnd ?? 0;
+      const indent = "\t";
+      const nextValue = `${code.slice(0, selectionStart)}${indent}${code.slice(selectionEnd)}`;
+
+      setCode(nextValue);
+
+      if (isBrowser && !isPreviewMode) {
+        window.localStorage.setItem(codeStorageKey, nextValue);
+      }
+
+      requestAnimationFrame(() => {
+        const textarea = textareaRef.current;
+
+        if (textarea) {
+          const cursorPosition = selectionStart + indent.length;
+
+          textarea.selectionStart = cursorPosition;
+          textarea.selectionEnd = cursorPosition;
+        }
+      });
+    },
+    [code, codeStorageKey, isPreviewMode],
+  );
+
   const instructions = useMemo(
     () => resolveInstructions(activeLanguage.name, activeLanguage.shortName),
     [activeLanguage.name, activeLanguage.shortName],
@@ -422,6 +466,7 @@ export const IndexPage = () => {
             lineNumbersInnerRef={lineNumbersInnerRef}
             textareaRef={textareaRef}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             onScroll={handleScroll}
           />
         </div>

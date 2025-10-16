@@ -738,7 +738,7 @@ export const AdminPage = () => {
   const renderContent = () => {
     if (authLoading || adminExists === null) {
       return (
-        <div className="rounded-2xl border border-default-200 bg-default-100 px-6 py-10 text-center text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+        <div className="rounded-2xl border border-default-200 bg-default-100 px-6 py-10 text-center text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
           Memeriksa status...
         </div>
       );

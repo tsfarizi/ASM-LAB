@@ -3,10 +3,15 @@ type InstructionsPanelProps = {
   labLabel: string;
 };
 
-export const InstructionsPanel = ({ instructions, labLabel }: InstructionsPanelProps) => (
+export const InstructionsPanel = ({
+  instructions,
+  labLabel,
+}: InstructionsPanelProps) => (
   <div className="flex flex-col rounded-3xl border border-default-200 bg-default-100 p-7 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.45)] dark:border-default-100/50 dark:bg-default-100/15 lg:max-h-[360px] lg:overflow-y-auto">
-    <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">List Tugas</h2>
-    <p className="mt-2 text-sm text-default-600 dark:text-default-400">
+    <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+      List Tugas
+    </h2>
+    <p className="mt-2 text-sm text-default-600 dark:text-default-200">
       Ikuti langkah berikut untuk menyelesaikan latihan {labLabel}.
     </p>
     <ul className="mt-6 space-y-3 text-sm text-default-700 dark:text-default-300">

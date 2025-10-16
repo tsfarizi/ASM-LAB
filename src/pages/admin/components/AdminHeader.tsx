@@ -6,14 +6,20 @@ type AdminHeaderProps = {
   onLogout: () => void;
 };
 
-export const AdminHeader = ({ classroomCount, totalUsers, onLogout }: AdminHeaderProps) => (
+export const AdminHeader = ({
+  classroomCount,
+  totalUsers,
+  onLogout,
+}: AdminHeaderProps) => (
   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div>
-      <h1 className="text-2xl font-semibold text-default-900 dark:text-default-50">Admin Classroom</h1>
-      <p className="text-sm text-default-600 dark:text-default-400">
+      <h1 className="text-2xl font-semibold text-default-900 dark:text-default-50">
+        Admin Classroom
+      </h1>
+      <p className="text-sm text-default-600 dark:text-default-200">
         Kelola data classroom, user, dan akun admin.
       </p>
-      <p className="mt-1 text-xs text-default-500 dark:text-default-500">
+      <p className="mt-1 text-xs text-default-500 dark:text-default-300">
         Total classroom: {classroomCount} · Total user: {totalUsers}
       </p>
     </div>

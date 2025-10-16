@@ -21,18 +21,21 @@ export const LoginForm = ({
     onSubmit={onSubmit}
   >
     <div className="space-y-2 text-left">
-      <label className="text-sm font-medium text-default-700 dark:text-default-200" htmlFor="npm">
+      <label
+        className="text-sm font-medium text-default-700 dark:text-default-200"
+        htmlFor="npm"
+      >
         NPM
       </label>
       <input
+        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+        disabled={isSubmitting}
         id="npm"
         placeholder="Masukkan NPM"
-        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
         value={npm}
         onChange={(event) => onNpmChange(event.target.value)}
-        disabled={isSubmitting}
       />
-      <p className="text-xs text-default-500 dark:text-default-400">
+      <p className="text-xs text-default-500 dark:text-default-300">
         Pastikan NPM sesuai dengan data yang terdaftar di sistem.
       </p>
     </div>
@@ -43,7 +46,13 @@ export const LoginForm = ({
       </div>
     ) : null}
 
-    <Button className="h-12 w-full justify-center text-base" color="primary" isLoading={isSubmitting} type="submit" variant="solid">
+    <Button
+      className="h-12 w-full justify-center text-base"
+      color="primary"
+      isLoading={isSubmitting}
+      type="submit"
+      variant="solid"
+    >
       Masuk
     </Button>
   </form>

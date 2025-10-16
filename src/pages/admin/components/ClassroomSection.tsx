@@ -1,9 +1,9 @@
 import { Button } from "@heroui/button";
 
-import { ExtendedLanguage } from "@/contexts/language-context";
-
 import { formatDateTime } from "../utils";
 import { ApiClassroom, ClassroomUserForm, ManagedUserForm } from "../types";
+
+import { ExtendedLanguage } from "@/contexts/language-context";
 
 type ClassroomSectionProps = {
   classrooms: ApiClassroom[];
@@ -49,7 +49,10 @@ type ClassroomSectionProps = {
     classroomId: number,
     updates: Partial<ClassroomUserForm>,
   ) => void;
-  onChangeManagedUserForm: (userId: number, updates: Partial<ManagedUserForm>) => void;
+  onChangeManagedUserForm: (
+    userId: number,
+    updates: Partial<ManagedUserForm>,
+  ) => void;
   onSaveManagedUser: (classroomId: number, userId: number) => void;
   onDeleteManagedUser: (classroomId: number, userId: number) => void;
   onPreviewUserCode: (code: string) => void;
@@ -118,12 +121,13 @@ export const ClassroomSection = ({
     disabled: boolean,
   ) => (
     <select
-      id={selectId}
       className="min-w-[220px] rounded-2xl border border-default-200 bg-white px-4 py-2 text-sm text-default-700 shadow-sm transition hover:border-default-300 focus:border-primary focus:outline-none dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-200"
-      value={selectedId ?? ""}
       disabled={disabled}
+      id={selectId}
+      value={selectedId ?? ""}
       onChange={(event) => {
         const value = event.target.value;
+
         onChange(value ? Number.parseInt(value, 10) : null);
       }}
     >
@@ -150,7 +154,7 @@ export const ClassroomSection = ({
   const renderClassroomList = () => {
     if (isLoading) {
       return (
-        <div className="rounded-2xl border border-default-200 bg-default-100 px-6 py-10 text-center text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+        <div className="rounded-2xl border border-default-200 bg-default-100 px-6 py-10 text-center text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
           Memuat data classroom...
         </div>
       );
@@ -158,7 +162,7 @@ export const ClassroomSection = ({
 
     if (classrooms.length === 0) {
       return (
-        <div className="rounded-2xl border border-default-200 bg-default-50 px-6 py-10 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-50/15 dark:text-default-400">
+        <div className="rounded-2xl border border-default-200 bg-default-50 px-6 py-10 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-50/15 dark:text-default-300">
           Belum ada classroom yang terdaftar.
         </div>
       );
@@ -169,7 +173,9 @@ export const ClassroomSection = ({
         {classrooms.map((classroom) => {
           const isEditing = editingClassroomId === classroom.id;
           const isDeleting = deletingClassroomId === classroom.id;
-          const resolvedLanguage = findLanguageByName(classroom.programmingLanguage);
+          const resolvedLanguage = findLanguageByName(
+            classroom.programmingLanguage,
+          );
           const languageLabel = resolvedLanguage
             ? `${resolvedLanguage.labLabel} • ${resolvedLanguage.name}`
             : classroom.programmingLanguage?.trim() || "Belum ditentukan";
@@ -178,6 +184,8 @@ export const ClassroomSection = ({
               ? "Terkunci untuk user"
               : "User dapat mengubah bahasa"
             : "Belum diatur, user bebas memilih bahasa";
+          const editingNameInputId = `classroom-name-${classroom.id}`;
+          const editingLockCheckboxId = `classroom-lock-${classroom.id}`;
 
           return (
             <article
@@ -189,17 +197,17 @@ export const ClassroomSection = ({
                   <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
                     {classroom.name}
                   </h2>
-                  <p className="text-sm text-default-600 dark:text-default-400">
+                  <p className="text-sm text-default-600 dark:text-default-200">
                     Bahasa pemrograman:{" "}
                     <span className="font-medium text-default-800 dark:text-default-200">
                       {languageLabel}
                     </span>
                   </p>
-                  <p className="text-xs text-default-500 dark:text-default-400">
+                  <p className="text-xs text-default-500 dark:text-default-300">
                     Status bahasa: {languageStatus}
                   </p>
                 </div>
-                <div className="flex flex-col items-start gap-2 text-xs text-default-500 dark:text-default-400 md:items-end">
+                <div className="flex flex-col items-start gap-2 text-xs text-default-500 dark:text-default-300 md:items-end">
                   <div>
                     <p>Dibuat: {formatDateTime(classroom.createdAt)}</p>
                     <p>Diubah: {formatDateTime(classroom.updatedAt)}</p>
@@ -209,38 +217,41 @@ export const ClassroomSection = ({
                       <>
                         <Button
                           color="primary"
-                          variant="solid"
                           isLoading={isSavingClassroom}
+                          variant="solid"
                           onPress={onUpdateClassroom}
                         >
                           Simpan Perubahan
                         </Button>
                         <Button
+                          disabled={isSavingClassroom}
                           variant="flat"
                           onPress={onCancelEditClassroom}
-                          disabled={isSavingClassroom}
                         >
                           Batal
                         </Button>
                         <Button
                           color="danger"
+                          isLoading={isDeleting}
                           variant="flat"
                           onPress={() => onDeleteClassroom(classroom.id)}
-                          isLoading={isDeleting}
                         >
                           Hapus
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Button variant="flat" onPress={() => onEditClassroom(classroom)}>
+                        <Button
+                          variant="flat"
+                          onPress={() => onEditClassroom(classroom)}
+                        >
                           Ubah
                         </Button>
                         <Button
                           color="danger"
+                          isLoading={isDeleting}
                           variant="flat"
                           onPress={() => onDeleteClassroom(classroom.id)}
-                          isLoading={isDeleting}
                         >
                           Hapus
                         </Button>
@@ -255,14 +266,20 @@ export const ClassroomSection = ({
                   <div className="space-y-4">
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-default-700 dark:text-default-200">
+                        <label
+                          className="text-sm font-medium text-default-700 dark:text-default-200"
+                          htmlFor={editingNameInputId}
+                        >
                           Nama Classroom
                         </label>
                         <input
                           className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
-                          value={editingName}
-                          onChange={(event) => onChangeEditingName(event.target.value)}
                           disabled={isSavingClassroom}
+                          id={editingNameInputId}
+                          value={editingName}
+                          onChange={(event) =>
+                            onChangeEditingName(event.target.value)
+                          }
                         />
                       </div>
                       <div className="flex flex-col gap-2">
@@ -278,24 +295,36 @@ export const ClassroomSection = ({
                           onChangeEditingLanguage,
                           isSavingClassroom,
                         )}
-                        <p className="text-xs text-default-500 dark:text-default-400">
-                          Pilih bahasa untuk menetapkan editor. Biarkan kosong agar user bebas memilih.
+                        <p className="text-xs text-default-500 dark:text-default-300">
+                          Pilih bahasa untuk menetapkan editor. Biarkan kosong
+                          agar user bebas memilih.
                         </p>
                       </div>
                     </div>
-                    <label className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300">
+                    <label
+                      className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300"
+                      htmlFor={editingLockCheckboxId}
+                    >
                       <input
-                        type="checkbox"
+                        checked={
+                          Boolean(editingLanguageId) && editingLockLanguage
+                        }
                         className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
-                        checked={Boolean(editingLanguageId) && editingLockLanguage}
-                        onChange={(event) => onToggleEditingLockLanguage(event.target.checked)}
-                        disabled={isSavingClassroom || editingLanguageId === null}
+                        disabled={
+                          isSavingClassroom || editingLanguageId === null
+                        }
+                        id={editingLockCheckboxId}
+                        type="checkbox"
+                        onChange={(event) =>
+                          onToggleEditingLockLanguage(event.target.checked)
+                        }
                       />
                       Kunci bahasa pemrograman untuk user
                     </label>
                     {editingLanguageId === null ? (
-                      <p className="text-xs text-default-500 dark:text-default-400">
-                        Penguncian bahasa hanya tersedia jika bahasa telah dipilih.
+                      <p className="text-xs text-default-500 dark:text-default-300">
+                        Penguncian bahasa hanya tersedia jika bahasa telah
+                        dipilih.
                       </p>
                     ) : null}
                     {editingError ? (
@@ -307,24 +336,30 @@ export const ClassroomSection = ({
                 ) : null}
 
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-400">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-200">
                     Daftar User ({classroom.users.length})
                   </h3>
                   {classroom.users.length === 0 ? (
-                    <p className="mt-3 rounded-2xl border border-default-200 bg-default-100 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+                    <p className="mt-3 rounded-2xl border border-default-200 bg-default-100 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
                       Belum ada user dalam classroom ini.
                     </p>
                   ) : (
                     <div className="mt-3 overflow-x-auto">
                       <table className="min-w-full divide-y divide-default-200 text-left text-sm text-default-700 dark:divide-default-100/20 dark:text-default-200">
-                        <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-400">
+                        <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-300">
                           <tr>
                             <th className="px-3 py-2 font-semibold">Nama</th>
                             <th className="px-3 py-2 font-semibold">NPM</th>
                             <th className="px-3 py-2 font-semibold">Kode</th>
-                            <th className="px-3 py-2 font-semibold">Terdaftar</th>
-                            <th className="px-3 py-2 font-semibold">Pembaruan</th>
-                            <th className="px-3 py-2 text-right font-semibold">Aksi</th>
+                            <th className="px-3 py-2 font-semibold">
+                              Terdaftar
+                            </th>
+                            <th className="px-3 py-2 font-semibold">
+                              Pembaruan
+                            </th>
+                            <th className="px-3 py-2 text-right font-semibold">
+                              Aksi
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-default-200 dark:divide-default-100/20">
@@ -333,34 +368,44 @@ export const ClassroomSection = ({
                               name: user.name,
                               npm: user.npm,
                             };
-                            const isSavingUser = managedUserSaving[user.id] ?? false;
-                            const isDeletingUser = managedUserDeleting[user.id] ?? false;
+                            const isSavingUser =
+                              managedUserSaving[user.id] ?? false;
+                            const isDeletingUser =
+                              managedUserDeleting[user.id] ?? false;
                             const isBusy = isSavingUser || isDeletingUser;
-                            const errorMessage = managedUserErrors[user.id] ?? null;
+                            const errorMessage =
+                              managedUserErrors[user.id] ?? null;
                             const hasCode = Boolean(user.code?.trim());
 
                             return (
-                              <tr key={user.id} className="bg-default-50 dark:bg-transparent">
+                              <tr
+                                key={user.id}
+                                className="bg-default-50 dark:bg-transparent"
+                              >
                                 <td className="px-3 py-2 font-medium text-default-800 dark:text-default-200">
                                   <div className="space-y-2">
                                     <input
                                       className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
+                                      disabled={isBusy}
                                       value={managedForm.name}
                                       onChange={(event) =>
-                                        onChangeManagedUserForm(user.id, { name: event.target.value })
+                                        onChangeManagedUserForm(user.id, {
+                                          name: event.target.value,
+                                        })
                                       }
-                                      disabled={isBusy}
                                     />
                                   </div>
                                 </td>
                                 <td className="px-3 py-2 text-default-600 dark:text-default-300">
                                   <input
                                     className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
+                                    disabled={isBusy}
                                     value={managedForm.npm}
                                     onChange={(event) =>
-                                      onChangeManagedUserForm(user.id, { npm: event.target.value })
+                                      onChangeManagedUserForm(user.id, {
+                                        npm: event.target.value,
+                                      })
                                     }
-                                    disabled={isBusy}
                                   />
                                 </td>
                                 <td className="px-3 py-2 text-default-600 dark:text-default-300">
@@ -368,24 +413,26 @@ export const ClassroomSection = ({
                                     <Button
                                       className="font-code"
                                       color="secondary"
+                                      isDisabled={!hasCode}
                                       size="sm"
                                       variant="flat"
-                                      isDisabled={!hasCode}
-                                      onPress={() => onPreviewUserCode(user.code)}
+                                      onPress={() =>
+                                        onPreviewUserCode(user.code)
+                                      }
                                     >
                                       Lihat
                                     </Button>
                                     {!hasCode ? (
-                                      <p className="text-xs text-default-500 dark:text-default-400">
+                                      <p className="text-xs text-default-500 dark:text-default-300">
                                         Belum ada kode yang dijalankan.
                                       </p>
                                     ) : null}
                                   </div>
                                 </td>
-                                <td className="px-3 py-2 text-default-500 dark:text-default-400">
+                                <td className="px-3 py-2 text-default-500 dark:text-default-300">
                                   {formatDateTime(user.createdAt)}
                                 </td>
-                                <td className="px-3 py-2 text-default-500 dark:text-default-400">
+                                <td className="px-3 py-2 text-default-500 dark:text-default-300">
                                   {formatDateTime(user.updatedAt)}
                                 </td>
                                 <td className="px-3 py-2 text-right">
@@ -393,21 +440,31 @@ export const ClassroomSection = ({
                                     <div className="flex gap-2">
                                       <Button
                                         color="primary"
+                                        isDisabled={isDeletingUser}
+                                        isLoading={isSavingUser}
                                         size="sm"
                                         variant="flat"
-                                        isLoading={isSavingUser}
-                                        isDisabled={isDeletingUser}
-                                        onPress={() => onSaveManagedUser(classroom.id, user.id)}
+                                        onPress={() =>
+                                          onSaveManagedUser(
+                                            classroom.id,
+                                            user.id,
+                                          )
+                                        }
                                       >
                                         Simpan Data
                                       </Button>
                                       <Button
                                         color="danger"
+                                        isDisabled={isSavingUser}
+                                        isLoading={isDeletingUser}
                                         size="sm"
                                         variant="flat"
-                                        isLoading={isDeletingUser}
-                                        isDisabled={isSavingUser}
-                                        onPress={() => onDeleteManagedUser(classroom.id, user.id)}
+                                        onPress={() =>
+                                          onDeleteManagedUser(
+                                            classroom.id,
+                                            user.id,
+                                          )
+                                        }
                                       >
                                         Hapus
                                       </Button>
@@ -434,21 +491,25 @@ export const ClassroomSection = ({
                     <div className="grid gap-3 md:grid-cols-2">
                       <input
                         className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={classroomUserLoading[classroom.id]}
                         placeholder="Nama user"
                         value={classroomUserForms[classroom.id]?.name ?? ""}
                         onChange={(event) =>
-                          onChangeClassroomUserForm(classroom.id, { name: event.target.value })
+                          onChangeClassroomUserForm(classroom.id, {
+                            name: event.target.value,
+                          })
                         }
-                        disabled={classroomUserLoading[classroom.id]}
                       />
                       <input
                         className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={classroomUserLoading[classroom.id]}
                         placeholder="NPM"
                         value={classroomUserForms[classroom.id]?.npm ?? ""}
                         onChange={(event) =>
-                          onChangeClassroomUserForm(classroom.id, { npm: event.target.value })
+                          onChangeClassroomUserForm(classroom.id, {
+                            npm: event.target.value,
+                          })
                         }
-                        disabled={classroomUserLoading[classroom.id]}
                       />
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -457,14 +518,15 @@ export const ClassroomSection = ({
                           {classroomUserErrors[classroom.id]}
                         </p>
                       ) : (
-                        <span className="text-xs text-default-500 dark:text-default-400">
-                          Nama dan NPM akan digunakan untuk membuat akun user pada classroom.
+                        <span className="text-xs text-default-500 dark:text-default-300">
+                          Nama dan NPM akan digunakan untuk membuat akun user
+                          pada classroom.
                         </span>
                       )}
                       <Button
                         color="primary"
-                        variant="solid"
                         isLoading={classroomUserLoading[classroom.id]}
+                        variant="solid"
                         onPress={() => onAddUserToClassroom(classroom.id)}
                       >
                         Tambahkan User
@@ -480,6 +542,9 @@ export const ClassroomSection = ({
     );
   };
 
+  const newClassroomNameId = "new-classroom-name";
+  const newClassroomLockId = "new-classroom-lock";
+
   return (
     <section className="space-y-4 rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -487,15 +552,15 @@ export const ClassroomSection = ({
           <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
             Manajemen Classroom
           </h2>
-          <p className="text-sm text-default-600 dark:text-default-400">
+          <p className="text-sm text-default-600 dark:text-default-200">
             Kelola data classroom beserta bahasa pemrograman yang digunakan.
           </p>
         </div>
         <Button
           color="secondary"
+          isLoading={isRefreshing || isLoading}
           variant="solid"
           onPress={onRefresh}
-          isLoading={isRefreshing || isLoading}
         >
           Muat Ulang Classroom
         </Button>
@@ -506,13 +571,22 @@ export const ClassroomSection = ({
           Tambah Classroom
         </h3>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <input
-            className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
-            placeholder="Nama classroom"
-            value={newClassroomName}
-            onChange={(event) => onChangeNewClassroomName(event.target.value)}
-            disabled={isCreatingClassroom}
-          />
+          <div className="flex flex-col gap-2">
+            <label
+              className="text-sm font-medium text-default-700 dark:text-default-200"
+              htmlFor={newClassroomNameId}
+            >
+              Nama Classroom
+            </label>
+            <input
+              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              disabled={isCreatingClassroom}
+              id={newClassroomNameId}
+              placeholder="Nama classroom"
+              value={newClassroomName}
+              onChange={(event) => onChangeNewClassroomName(event.target.value)}
+            />
+          </div>
           <div className="flex flex-col gap-2">
             <label
               className="text-sm font-medium text-default-700 dark:text-default-200"
@@ -526,33 +600,44 @@ export const ClassroomSection = ({
               onChangeNewClassroomLanguage,
               isCreatingClassroom,
             )}
-            <p className="text-xs text-default-500 dark:text-default-400">
-              Pilih bahasa untuk menetapkan editor. Biarkan kosong agar user memilih sendiri.
+            <p className="text-xs text-default-500 dark:text-default-300">
+              Pilih bahasa untuk menetapkan editor. Biarkan kosong agar user
+              memilih sendiri.
             </p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300">
+          <label
+            className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300"
+            htmlFor={newClassroomLockId}
+          >
             <input
-              type="checkbox"
+              checked={
+                Boolean(newClassroomLanguageId) && newClassroomLockLanguage
+              }
               className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
-              checked={Boolean(newClassroomLanguageId) && newClassroomLockLanguage}
-              onChange={(event) => onToggleNewClassroomLock(event.target.checked)}
               disabled={isCreatingClassroom || newClassroomLanguageId === null}
+              id={newClassroomLockId}
+              type="checkbox"
+              onChange={(event) =>
+                onToggleNewClassroomLock(event.target.checked)
+              }
             />
             Kunci bahasa pemrograman untuk user
           </label>
           <Button
             color="primary"
-            variant="solid"
             isLoading={isCreatingClassroom}
+            variant="solid"
             onPress={onCreateClassroom}
           >
             Simpan Classroom
           </Button>
         </div>
         {classroomFormError ? (
-          <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">{classroomFormError}</p>
+          <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">
+            {classroomFormError}
+          </p>
         ) : newClassroomLanguageId === null && newClassroomLockLanguage ? (
           <p className="mt-2 text-sm text-warning-600 dark:text-warning-300">
             Penguncian bahasa akan aktif setelah memilih bahasa.
