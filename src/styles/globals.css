@@ -11,6 +11,24 @@ body {
   font-family: "Cinzel", serif;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: rgb(15 23 42);
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: rgb(226 232 240);
+}
+
 .font-code {
   font-family: var(--font-code);
 }
@@ -23,19 +41,62 @@ body {
   color: rgb(229 231 235);
 }
 
-.code-editor-highlight .token-keyword {
+.code-editor-highlight .token.comment,
+.code-editor-highlight .token.prolog,
+.code-editor-highlight .token.cdata {
+  color: rgb(100 116 139);
+  font-style: italic;
+}
+
+.dark .code-editor-highlight .token.comment,
+.dark .code-editor-highlight .token.prolog,
+.dark .code-editor-highlight .token.cdata {
+  color: rgb(148 163 184);
+}
+
+.code-editor-highlight .token.keyword,
+.code-editor-highlight .token.boolean,
+.code-editor-highlight .token.selector,
+.code-editor-highlight .token.important,
+.code-editor-highlight .token.atrule {
   color: rgb(129 140 248);
   font-weight: 600;
 }
 
-.code-editor-highlight .token-register {
-  color: rgb(14 165 233);
-  font-weight: 600;
+.code-editor-highlight .token.punctuation {
+  opacity: 0.75;
 }
 
-.code-editor-highlight .token-number {
+.code-editor-highlight .token.builtin,
+.code-editor-highlight .token.class-name,
+.code-editor-highlight .token.function,
+.code-editor-highlight .token.attr-name {
+  color: rgb(52 211 153);
+}
+
+.code-editor-highlight .token.number,
+.code-editor-highlight .token.symbol,
+.code-editor-highlight .token.constant {
   color: rgb(249 115 22);
-  font-weight: 600;
+}
+
+.code-editor-highlight .token.string,
+.code-editor-highlight .token.char,
+.code-editor-highlight .token.regex,
+.code-editor-highlight .token.variable {
+  color: rgb(16 185 129);
+}
+
+.code-editor-highlight .token.property,
+.code-editor-highlight .token.operator,
+.code-editor-highlight .token.entity,
+.code-editor-highlight .token.url {
+  color: rgb(96 165 250);
+  background-color: transparent;
+}
+
+.code-editor-highlight .token.deleted {
+  color: rgb(248 113 113);
 }
 
 .code-editor-textarea::selection {
