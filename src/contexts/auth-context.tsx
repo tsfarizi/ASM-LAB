@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useCallback,
   useContext,
@@ -7,9 +7,9 @@
   useState,
 } from "react";
 
+import { API_BASE_URL } from "@/constants/api";
+
 const AUTH_STORAGE_KEY = "asm-lab-account";
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 type AccountRole = "user" | "admin";
 

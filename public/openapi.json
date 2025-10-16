@@ -1,0 +1,858 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ASM-LAB-SERVER",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/accounts": {
+      "get": {
+        "tags": ["Accounts"],
+        "operationId": "list_accounts",
+        "responses": {
+          "200": {
+            "description": "Daftar akun",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Accounts"],
+        "operationId": "create_account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Akun dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          }
+        }
+      }
+    },
+    "/api/accounts/{id}": {
+      "get": {
+        "tags": ["Accounts"],
+        "operationId": "get_account",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID akun",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail akun",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Akun tidak ditemukan"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Accounts"],
+        "operationId": "delete_account",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID akun",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Akun dihapus"
+          },
+          "404": {
+            "description": "Akun tidak ditemukan"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Accounts"],
+        "operationId": "update_account_role",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID akun",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountRoleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Akun diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Akun tidak ditemukan"
+          }
+        }
+      }
+    },
+    "/api/auth/admin-exists": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "admin_exists",
+        "responses": {
+          "200": {
+            "description": "Status ketersediaan admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminExistsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          }
+        }
+      }
+    },
+    "/api/classrooms": {
+      "get": {
+        "tags": ["Classrooms"],
+        "operationId": "list_classrooms",
+        "responses": {
+          "200": {
+            "description": "List all classrooms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClassroomResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Classrooms"],
+        "operationId": "create_classroom",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClassroomRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Classroom created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload"
+          }
+        }
+      }
+    },
+    "/api/classrooms/{id}": {
+      "get": {
+        "tags": ["Classrooms"],
+        "operationId": "get_classroom",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get classroom by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Classroom not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Classrooms"],
+        "operationId": "update_classroom",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateClassroomRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Classroom updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Classroom not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Classrooms"],
+        "operationId": "delete_classroom",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Classroom deleted"
+          },
+          "404": {
+            "description": "Classroom not found"
+          }
+        }
+      }
+    },
+    "/api/classrooms/{id}/users": {
+      "get": {
+        "tags": ["Users"],
+        "operationId": "list_classroom_users",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List users for classroom",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Classroom not found"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "operationId": "add_user_to_classroom",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User added to classroom",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Classroom not found"
+          }
+        }
+      }
+    },
+    "/api/classrooms/{classroom_id}/users/{user_id}": {
+      "put": {
+        "tags": ["Users"],
+        "operationId": "update_user_in_classroom",
+        "parameters": [
+          {
+            "name": "classroom_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Classroom or user not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "operationId": "delete_user_from_classroom",
+        "parameters": [
+          {
+            "name": "classroom_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted"
+          },
+          "404": {
+            "description": "Classroom or user not found"
+          }
+        }
+      }
+    },
+    "/api/judge0/submissions": {
+      "post": {
+        "tags": ["Executor"],
+        "operationId": "submit_code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Judge0SubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hasil eksekusi dari Judge0",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "502": {
+            "description": "Permintaan ke Judge0 gagal"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountResponse": {
+        "type": "object",
+        "required": ["id", "npm", "role", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "npm": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AccountRole": {
+        "type": "string",
+        "enum": ["user", "admin"]
+      },
+      "AdminExistsResponse": {
+        "type": "object",
+        "required": ["exists"],
+        "properties": {
+          "exists": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ClassroomResponse": {
+        "type": "object",
+        "required": ["id", "name", "languageLocked", "users", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "programmingLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "languageLocked": {
+            "type": "boolean"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "required": ["npm", "role"],
+        "properties": {
+          "npm": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          }
+        }
+      },
+      "CreateClassroomRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "programmingLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "lockLanguage": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateUserRequest"
+            }
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": ["name", "npm", "code"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "npm": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "Judge0SubmissionRequest": {
+        "type": "object",
+        "required": ["source_code", "language_id"],
+        "properties": {
+          "source_code": {
+            "type": "string"
+          },
+          "language_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stdin": {
+            "type": "string",
+            "nullable": true
+          },
+          "expected_output": {
+            "type": "string",
+            "nullable": true
+          },
+          "cpu_time_limit": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "memory_limit": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "minimum": 0
+          },
+          "compiler_options": {
+            "type": "string",
+            "nullable": true
+          },
+          "command_line_arguments": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["npm"],
+        "properties": {
+          "npm": {
+            "type": "string"
+          },
+          "asAdmin": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "required": ["account", "isNew"],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse"
+          },
+          "classroom": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LoginClassroomInfo"
+              }
+            ],
+            "nullable": true
+          },
+          "isNew": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoginClassroomInfo": {
+        "type": "object",
+        "required": ["id", "name", "languageLocked"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "programmingLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "languageLocked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateAccountRoleRequest": {
+        "type": "object",
+        "required": ["role"],
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          }
+        }
+      },
+      "UpdateClassroomRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "programmingLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "lockLanguage": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateUserRequest"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "npm": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "required": ["id", "name", "npm", "code", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "npm": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Classrooms",
+      "description": "Manajemen entitas kelas"
+    },
+    {
+      "name": "Users",
+      "description": "Pengelolaan user di dalam kelas"
+    },
+    {
+      "name": "Executor",
+      "description": "Proxy eksekusi kode ke Judge0"
+    },
+    {
+      "name": "Accounts",
+      "description": "Manajemen akun login"
+    },
+    {
+      "name": "Auth",
+      "description": "Autentikasi pengguna"
+    }
+  ]
+}

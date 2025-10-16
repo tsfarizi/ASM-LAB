@@ -1,7 +1,8 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@heroui/button";
 import { useNavigate } from "react-router-dom";
 
+import { API_BASE_URL } from "@/constants/api";
 import { type Account as AuthAccount, useAuth } from "@/contexts/auth-context";
 import DefaultLayout from "@/layouts/default";
 
@@ -17,16 +18,14 @@ type ApiUser = {
 type ApiClassroom = {
   id: number;
   name: string;
-  programmingLanguage: string;
+  programmingLanguage: string | null;
+  languageLocked: boolean;
   users: ApiUser[];
   createdAt: string;
   updatedAt: string;
 };
 
 type ApiAccount = AuthAccount;
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString("id-ID", {
@@ -42,6 +41,7 @@ const roleLabel: Record<ApiAccount["role"], string> = {
 export default function AdminPage() {
   const navigate = useNavigate();
   const { account, login, logout, syncAccount, isLoading: authLoading } = useAuth();
+  const accountRef = useRef<AuthAccount | null>(account);
 
   const [adminExists, setAdminExists] = useState<boolean | null>(null);
   const [adminCheckError, setAdminCheckError] = useState<string | null>(null);
@@ -50,6 +50,19 @@ export default function AdminPage() {
   const [isClassroomLoading, setIsClassroomLoading] = useState(false);
   const [classroomError, setClassroomError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [newClassroomName, setNewClassroomName] = useState("");
+  const [newClassroomLanguage, setNewClassroomLanguage] = useState("");
+  const [newClassroomLockLanguage, setNewClassroomLockLanguage] = useState(false);
+  const [classroomFormError, setClassroomFormError] = useState<string | null>(null);
+  const [classroomActionError, setClassroomActionError] = useState<string | null>(null);
+  const [isCreatingClassroom, setIsCreatingClassroom] = useState(false);
+  const [editingClassroomId, setEditingClassroomId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingLanguage, setEditingLanguage] = useState("");
+  const [editingLockLanguage, setEditingLockLanguage] = useState(false);
+  const [editingError, setEditingError] = useState<string | null>(null);
+  const [isSavingClassroom, setIsSavingClassroom] = useState(false);
+  const [deletingClassroomId, setDeletingClassroomId] = useState<number | null>(null);
 
   const [accounts, setAccounts] = useState<ApiAccount[]>([]);
   const [accountsError, setAccountsError] = useState<string | null>(null);
@@ -63,6 +76,10 @@ export default function AdminPage() {
   const [newAccountRole, setNewAccountRole] = useState<ApiAccount["role"]>("user");
   const [accountFormError, setAccountFormError] = useState<string | null>(null);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
+
+  useEffect(() => {
+    accountRef.current = account ?? null;
+  }, [account]);
 
   const totalUsers = useMemo(
     () => classrooms.reduce((count, classroom) => count + classroom.users.length, 0),
@@ -120,12 +137,17 @@ export default function AdminPage() {
       const data: ApiAccount[] = await response.json();
       setAccounts(data);
 
-      if (account) {
-        const matched = data.find((item) => item.id === account.id);
-        if (matched) {
-          syncAccount(matched as AuthAccount);
-        } else {
+      const currentAccount = accountRef.current;
+      if (currentAccount) {
+        const matched = data.find((item) => item.id === currentAccount.id);
+        if (!matched) {
           syncAccount(null);
+        } else if (
+          matched.role !== currentAccount.role ||
+          matched.npm !== currentAccount.npm ||
+          matched.updatedAt !== currentAccount.updatedAt
+        ) {
+          syncAccount(matched as AuthAccount);
         }
       }
     } catch (error) {
@@ -137,7 +159,7 @@ export default function AdminPage() {
     } finally {
       setIsAccountsLoading(false);
     }
-  }, [account, syncAccount]);
+  }, [syncAccount]);
 
   useEffect(() => {
     void fetchAdminExists();
@@ -156,6 +178,158 @@ export default function AdminPage() {
       await fetchClassrooms();
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleCreateClassroom = async () => {
+    const trimmedName = newClassroomName.trim();
+    if (!trimmedName) {
+      setClassroomFormError("Nama classroom wajib diisi.");
+      return;
+    }
+
+    const trimmedLanguage = newClassroomLanguage.trim();
+    const payload: Record<string, unknown> = {
+      name: trimmedName,
+      lockLanguage: newClassroomLockLanguage,
+    };
+
+    if (trimmedLanguage) {
+      payload.programmingLanguage = trimmedLanguage;
+    }
+
+    setClassroomFormError(null);
+    setClassroomActionError(null);
+    setEditingError(null);
+    setIsCreatingClassroom(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/classrooms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Gagal membuat classroom.");
+      }
+
+      setNewClassroomName("");
+      setNewClassroomLanguage("");
+      setNewClassroomLockLanguage(false);
+      await fetchClassrooms();
+    } catch (error) {
+      setClassroomActionError(
+        error instanceof Error
+          ? error.message
+          : "Tidak dapat membuat classroom.",
+      );
+    } finally {
+      setIsCreatingClassroom(false);
+    }
+  };
+
+  const beginEditClassroom = (classroom: ApiClassroom) => {
+    setClassroomActionError(null);
+    setEditingError(null);
+    setEditingClassroomId(classroom.id);
+    setEditingName(classroom.name);
+    setEditingLanguage(classroom.programmingLanguage ?? "");
+    setEditingLockLanguage(classroom.languageLocked);
+  };
+
+  const handleCancelEditClassroom = () => {
+    if (isSavingClassroom) {
+      return;
+    }
+    setEditingClassroomId(null);
+    setEditingName("");
+    setEditingLanguage("");
+    setEditingLockLanguage(false);
+    setClassroomActionError(null);
+    setEditingError(null);
+  };
+
+  const handleUpdateClassroom = async () => {
+    if (editingClassroomId === null) {
+      return;
+    }
+
+    const trimmedName = editingName.trim();
+    if (!trimmedName) {
+      setEditingError("Nama classroom wajib diisi.");
+      return;
+    }
+
+    const trimmedLanguage = editingLanguage.trim();
+    const payload = {
+      name: trimmedName,
+      programmingLanguage: trimmedLanguage ? trimmedLanguage : null,
+      lockLanguage: editingLockLanguage,
+    };
+
+    setClassroomActionError(null);
+    setEditingError(null);
+    setIsSavingClassroom(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/classrooms/${editingClassroomId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Gagal memperbarui classroom.");
+      }
+
+      await fetchClassrooms();
+      handleCancelEditClassroom();
+    } catch (error) {
+      setEditingError(
+        error instanceof Error
+          ? error.message
+          : "Tidak dapat memperbarui classroom.",
+      );
+    } finally {
+      setIsSavingClassroom(false);
+    }
+  };
+
+  const handleDeleteClassroom = async (classroomId: number) => {
+    if (!window.confirm("Hapus classroom ini?")) {
+      return;
+    }
+
+    setClassroomActionError(null);
+    setEditingError(null);
+    setDeletingClassroomId(classroomId);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/classrooms/${classroomId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Gagal menghapus classroom.");
+      }
+
+      if (editingClassroomId === classroomId) {
+        handleCancelEditClassroom();
+      }
+
+      await fetchClassrooms();
+    } catch (error) {
+      setClassroomActionError(
+        error instanceof Error
+          ? error.message
+          : "Tidak dapat menghapus classroom.",
+      );
+    } finally {
+      setDeletingClassroomId(null);
     }
   };
 
@@ -267,105 +441,305 @@ export default function AdminPage() {
   };
 
   const renderClassrooms = () => {
-    if (classroomError) {
-      return (
-        <div className="rounded-2xl border border-danger-300 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-200/40 dark:bg-danger-500/10 dark:text-danger-200">
-          {classroomError}
-        </div>
-      );
-    }
+    const classroomList = () => {
+      if (isClassroomLoading) {
+        return (
+          <div className="rounded-2xl border border-default-200 bg-default-100 px-6 py-10 text-center text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+            Memuat data classroom...
+          </div>
+        );
+      }
 
-    if (isClassroomLoading) {
-      return (
-        <div className="rounded-2xl border border-default-200 bg-default-100 px-6 py-10 text-center text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
-          Memuat data classroom...
-        </div>
-      );
-    }
+      if (classrooms.length === 0) {
+        return (
+          <div className="rounded-2xl border border-default-200 bg-default-50 px-6 py-10 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-50/15 dark:text-default-400">
+            Belum ada classroom yang terdaftar.
+          </div>
+        );
+      }
 
-    if (classrooms.length === 0) {
       return (
-        <div className="rounded-2xl border border-default-200 bg-default-50 px-6 py-10 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-50/15 dark:text-default-400">
-          Belum ada classroom yang terdaftar.
+        <div className="space-y-6">
+          {classrooms.map((classroom) => {
+            const isEditing = editingClassroomId === classroom.id;
+            const isDeleting = deletingClassroomId === classroom.id;
+            const languageLabel = classroom.programmingLanguage?.trim()
+              ? classroom.programmingLanguage
+              : "Belum ditentukan";
+
+            return (
+              <article
+                key={classroom.id}
+                className="rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10"
+              >
+                <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+                      {classroom.name}
+                    </h2>
+                    <p className="text-sm text-default-600 dark:text-default-400">
+                      Bahasa pemrograman:{" "}
+                      <span className="font-medium text-default-800 dark:text-default-200">
+                        {languageLabel}
+                      </span>
+                    </p>
+                    <p className="text-xs text-default-500 dark:text-default-400">
+                      Status bahasa: {classroom.languageLocked ? "Terkunci untuk user" : "User dapat mengubah bahasa"}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-start gap-2 text-xs text-default-500 dark:text-default-400 md:items-end">
+                    <div>
+                      <p>Dibuat: {formatDateTime(classroom.createdAt)}</p>
+                      <p>Diubah: {formatDateTime(classroom.updatedAt)}</p>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2 text-sm md:text-base">
+                      {isEditing ? (
+                        <>
+                          <Button
+                            color="primary"
+                            variant="solid"
+                            isLoading={isSavingClassroom}
+                            onPress={handleUpdateClassroom}
+                          >
+                            Simpan Perubahan
+                          </Button>
+                          <Button
+                            variant="flat"
+                            onPress={handleCancelEditClassroom}
+                            disabled={isSavingClassroom}
+                          >
+                            Batal
+                          </Button>
+                          <Button
+                            color="danger"
+                            variant="flat"
+                            onPress={() => handleDeleteClassroom(classroom.id)}
+                            isLoading={isDeleting}
+                          >
+                            Hapus
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="flat" onPress={() => beginEditClassroom(classroom)}>
+                            Ubah
+                          </Button>
+                          <Button
+                            color="danger"
+                            variant="flat"
+                            onPress={() => handleDeleteClassroom(classroom.id)}
+                            isLoading={isDeleting}
+                          >
+                            Hapus
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-5">
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium text-default-700 dark:text-default-200">
+                            Nama Classroom
+                          </label>
+                          <input
+                            className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                            value={editingName}
+                            onChange={(event) => {
+                              setEditingName(event.target.value);
+                              if (editingError) {
+                                setEditingError(null);
+                              }
+                            }}
+                            disabled={isSavingClassroom}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium text-default-700 dark:text-default-200">
+                            Bahasa Pemrograman
+                          </label>
+                          <input
+                            className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                            placeholder="Contoh: Python"
+                            value={editingLanguage}
+                            onChange={(event) => {
+                              setEditingLanguage(event.target.value);
+                              if (editingError) {
+                                setEditingError(null);
+                              }
+                            }}
+                            disabled={isSavingClassroom}
+                          />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
+                          checked={editingLockLanguage}
+                          onChange={(event) => {
+                            setEditingLockLanguage(event.target.checked);
+                            if (editingError) {
+                              setEditingError(null);
+                            }
+                          }}
+                          disabled={isSavingClassroom}
+                        />
+                        Kunci bahasa pemrograman untuk user
+                      </label>
+                      {editingError ? (
+                        <div className="rounded-2xl border border-danger-300 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-200/40 dark:bg-danger-500/10 dark:text-danger-200">
+                          {editingError}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-400">
+                      Daftar User ({classroom.users.length})
+                    </h3>
+                    {classroom.users.length === 0 ? (
+                      <p className="mt-3 rounded-2xl border border-default-200 bg-default-100 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+                        Belum ada user dalam classroom ini.
+                      </p>
+                    ) : (
+                      <div className="mt-3 overflow-x-auto">
+                        <table className="min-w-full divide-y divide-default-200 text-left text-sm text-default-700 dark:divide-default-100/30 dark:text-default-200">
+                          <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-400">
+                            <tr>
+                              <th className="px-3 py-2 font-semibold">Nama</th>
+                              <th className="px-3 py-2 font-semibold">NPM</th>
+                              <th className="px-3 py-2 font-semibold">Kode</th>
+                              <th className="px-3 py-2 font-semibold">Terdaftar</th>
+                              <th className="px-3 py-2 font-semibold">Pembaruan</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-default-200 dark:divide-default-100/20">
+                            {classroom.users.map((user) => (
+                              <tr key={user.id} className="bg-default-50 dark:bg-transparent">
+                                <td className="px-3 py-2 font-medium text-default-800 dark:text-default-200">
+                                  {user.name}
+                                </td>
+                                <td className="px-3 py-2 text-default-600 dark:text-default-300">
+                                  {user.npm}
+                                </td>
+                                <td className="px-3 py-2 text-default-600 dark:text-default-300">
+                                  <code className="rounded bg-default-100 px-2 py-1 font-code text-xs dark:bg-default-100/20">
+                                    {user.code}
+                                  </code>
+                                </td>
+                                <td className="px-3 py-2 text-default-500 dark:text-default-400">
+                                  {formatDateTime(user.createdAt)}
+                                </td>
+                                <td className="px-3 py-2 text-default-500 dark:text-default-400">
+                                  {formatDateTime(user.updatedAt)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       );
-    }
+    };
 
     return (
-      <div className="space-y-6">
-        {classrooms.map((classroom) => (
-          <article
-            key={classroom.id}
-            className="rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10"
+      <section className="space-y-4 rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">Manajemen Classroom</h2>
+            <p className="text-sm text-default-600 dark:text-default-400">
+              Kelola data classroom beserta bahasa pemrograman yang digunakan.
+            </p>
+          </div>
+          <Button
+            color="secondary"
+            variant="solid"
+            onPress={handleRefreshClassrooms}
+            isLoading={isRefreshing || isClassroomLoading}
           >
-            <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
-                  {classroom.name}
-                </h2>
-                <p className="text-sm text-default-600 dark:text-default-400">
-                  Bahasa pemrograman:{" "}
-                  <span className="font-medium text-default-800 dark:text-default-200">
-                    {classroom.programmingLanguage}
-                  </span>
-                </p>
-              </div>
-              <div className="text-xs text-default-500 dark:text-default-400">
-                <p>Dibuat: {formatDateTime(classroom.createdAt)}</p>
-                <p>Diubah: {formatDateTime(classroom.updatedAt)}</p>
-              </div>
-            </div>
+            Muat Ulang Classroom
+          </Button>
+        </div>
 
-            <div className="mt-5">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-400">
-                Daftar User ({classroom.users.length})
-              </h3>
-              {classroom.users.length === 0 ? (
-                <p className="mt-3 rounded-2xl border border-default-200 bg-default-100 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
-                  Belum ada user dalam classroom ini.
-                </p>
-              ) : (
-                <div className="mt-3 overflow-x-auto">
-                  <table className="min-w-full divide-y divide-default-200 text-left text-sm text-default-700 dark:divide-default-100/30 dark:text-default-200">
-                    <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-400">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold">Nama</th>
-                        <th className="px-3 py-2 font-semibold">NPM</th>
-                        <th className="px-3 py-2 font-semibold">Kode</th>
-                        <th className="px-3 py-2 font-semibold">Terdaftar</th>
-                        <th className="px-3 py-2 font-semibold">Pembaruan</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-default-200 dark:divide-default-100/20">
-                      {classroom.users.map((user) => (
-                        <tr key={user.id} className="bg-default-50 dark:bg-transparent">
-                          <td className="px-3 py-2 font-medium text-default-800 dark:text-default-200">
-                            {user.name}
-                          </td>
-                          <td className="px-3 py-2 text-default-600 dark:text-default-300">
-                            {user.npm}
-                          </td>
-                          <td className="px-3 py-2 text-default-600 dark:text-default-300">
-                            <code className="rounded bg-default-100 px-2 py-1 font-code text-xs dark:bg-default-100/20">
-                              {user.code}
-                            </code>
-                          </td>
-                          <td className="px-3 py-2 text-default-500 dark:text-default-400">
-                            {formatDateTime(user.createdAt)}
-                          </td>
-                          <td className="px-3 py-2 text-default-500 dark:text-default-400">
-                            {formatDateTime(user.updatedAt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+        <div className="rounded-2xl border border-default-200 bg-default-100/40 p-5 dark:border-default-100/40 dark:bg-default-100/10">
+          <h3 className="text-sm font-semibold text-default-700 dark:text-default-200">Tambah Classroom</h3>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <input
+              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              placeholder="Nama classroom"
+              value={newClassroomName}
+              onChange={(event) => {
+                setNewClassroomName(event.target.value);
+                if (classroomFormError) {
+                  setClassroomFormError(null);
+                }
+              }}
+              disabled={isCreatingClassroom}
+            />
+            <input
+              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              placeholder="Bahasa pemrograman (opsional)"
+              value={newClassroomLanguage}
+              onChange={(event) => {
+                setNewClassroomLanguage(event.target.value);
+                if (classroomFormError) {
+                  setClassroomFormError(null);
+                }
+              }}
+              disabled={isCreatingClassroom}
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
+                checked={newClassroomLockLanguage}
+                onChange={(event) => setNewClassroomLockLanguage(event.target.checked)}
+                disabled={isCreatingClassroom}
+              />
+              Kunci bahasa pemrograman untuk user
+            </label>
+            <Button
+              color="primary"
+              variant="solid"
+              isLoading={isCreatingClassroom}
+              onPress={handleCreateClassroom}
+            >
+              Simpan Classroom
+            </Button>
+          </div>
+          {classroomFormError ? (
+            <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">{classroomFormError}</p>
+          ) : null}
+        </div>
+
+        {classroomActionError ? (
+          <div className="rounded-2xl border border-danger-300 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-200/40 dark:bg-danger-500/10 dark:text-danger-200">
+            {classroomActionError}
+          </div>
+        ) : null}
+
+        {classroomError ? (
+          <div className="rounded-2xl border border-danger-300 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-200/40 dark:bg-danger-500/10 dark:text-danger-200">
+            {classroomError}
+          </div>
+        ) : null}
+
+        {classroomList()}
+      </section>
     );
   };
 
@@ -588,14 +962,6 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <Button color="default" variant="flat" onPress={handleLogout}>
               Keluar
-            </Button>
-            <Button
-              color="primary"
-              isLoading={isRefreshing || isClassroomLoading}
-              onPress={handleRefreshClassrooms}
-              variant="solid"
-            >
-              Muat Ulang Classroom
             </Button>
           </div>
         </div>

@@ -9,12 +9,11 @@ import {
 } from "react";
 import { Button } from "@heroui/button";
 
+import { API_BASE_URL } from "@/constants/api";
 import { useLanguage } from "@/contexts/language-context";
 import DefaultLayout from "@/layouts/default";
 
 const CODE_STORAGE_PREFIX = "lab-editor-code";
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 const SUBMISSION_ENDPOINT = `${API_BASE_URL}/api/judge0/submissions`;
 const isBrowser = typeof window !== "undefined";
 
