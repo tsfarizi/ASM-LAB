@@ -9,6 +9,11 @@
 
 body {
   font-family: "Cinzel", serif;
+  color: rgb(15 23 42);
+}
+
+.dark body {
+  color: rgb(226 232 240);
 }
 
 h1,

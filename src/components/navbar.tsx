@@ -27,6 +27,25 @@ export const Navbar = () => {
             <p className="font-bold text-inherit">{activeLanguage.labLabel}</p>
           </HeroUILink>
         </NavbarBrand>
+
+        {account?.role === "admin" ? (
+          <>
+            <HeroUILink
+              className="hidden rounded-full px-4 py-1 text-sm font-medium text-default-600 transition hover:text-primary sm:inline-block dark:text-default-300 dark:hover:text-primary-200"
+              color="foreground"
+              href="#/admin"
+            >
+              Admin
+            </HeroUILink>
+            <HeroUILink
+              className="text-sm font-medium text-default-600 transition hover:text-primary sm:hidden dark:text-default-300 dark:hover:text-primary-200"
+              color="foreground"
+              href="#/admin"
+            >
+              Admin
+            </HeroUILink>
+          </>
+        ) : null}
       </NavbarContent>
 
       <NavbarContent className="sm:basis-full" justify="end">
@@ -39,9 +58,6 @@ export const Navbar = () => {
             Login
           </HeroUILink>
         )}
-        <HeroUILink className="text-sm font-medium" color="foreground" href="#/admin">
-          Admin
-        </HeroUILink>
         <ThemeSwitch />
       </NavbarContent>
     </HeroUINavbar>

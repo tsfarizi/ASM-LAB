@@ -39,6 +39,7 @@ const roleLabel: Record<ApiAccount["role"], string> = {
 };
 
 export default function AdminPage() {
+  void apiEndpoints;
   const navigate = useNavigate();
   const { account, login, logout, syncAccount, isLoading: authLoading } = useAuth();
   const accountRef = useRef<AuthAccount | null>(account);
@@ -76,6 +77,16 @@ export default function AdminPage() {
   const [newAccountRole, setNewAccountRole] = useState<ApiAccount["role"]>("user");
   const [accountFormError, setAccountFormError] = useState<string | null>(null);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
+
+  const [classroomUserForms, setClassroomUserForms] = useState<
+    Record<number, { name: string; npm: string; code: string }>
+  >({});
+  const [classroomUserErrors, setClassroomUserErrors] = useState<Record<number, string | null>>({});
+  const [classroomUserLoading, setClassroomUserLoading] = useState<Record<number, boolean>>({});
+
+  const [userNameInputs, setUserNameInputs] = useState<Record<number, string>>({});
+  const [userNameErrors, setUserNameErrors] = useState<Record<number, string | null>>({});
+  const [userNameSaving, setUserNameSaving] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     accountRef.current = account ?? null;
@@ -115,6 +126,30 @@ export default function AdminPage() {
       }
       const data: ApiClassroom[] = await response.json();
       setClassrooms(data);
+      setUserNameInputs(
+        data.reduce<Record<number, string>>((accumulator, classroom) => {
+          classroom.users.forEach((user) => {
+            accumulator[user.id] = user.name;
+          });
+          return accumulator;
+        }, {}),
+      );
+      setUserNameErrors((prev) => {
+        const next = { ...prev };
+        const validIds = new Set<number>();
+        data.forEach((classroom) => {
+          classroom.users.forEach((user) => {
+            validIds.add(user.id);
+          });
+        });
+        Object.keys(next).forEach((key) => {
+          const id = Number.parseInt(key, 10);
+          if (!validIds.has(id)) {
+            delete next[id];
+          }
+        });
+        return next;
+      });
     } catch (error) {
       setClassroomError(
         error instanceof Error
@@ -161,6 +196,57 @@ export default function AdminPage() {
     }
   }, [syncAccount]);
 
+  const fetchApiDocs = useCallback(async () => {
+    setApiDocsError(null);
+    setIsApiDocsLoading(true);
+    try {
+      const response = await fetch("/openapi.json");
+      if (!response.ok) {
+        throw new Error(`Gagal memuat dokumentasi API (${response.status})`);
+      }
+
+      const data = (await response.json()) as {
+        paths?: Record<
+          string,
+          Record<
+            string,
+            {
+              tags?: string[];
+              summary?: string;
+              description?: string;
+              operationId?: string;
+            }
+          >
+        >;
+      };
+
+      const endpoints: ApiEndpoint[] = [];
+      if (data.paths) {
+        Object.entries(data.paths).forEach(([path, methods]) => {
+          Object.entries(methods).forEach(([method, operation]) => {
+            const tag = operation.tags?.[0] ?? "Lainnya";
+            const summary = operation.summary ?? operation.operationId ?? "Tanpa judul";
+            endpoints.push({
+              method: method.toUpperCase(),
+              path,
+              summary,
+              description: operation.description ?? "",
+              tag,
+            });
+          });
+        });
+      }
+
+      setApiEndpoints(endpoints.sort((a, b) => a.path.localeCompare(b.path)));
+    } catch (error) {
+      setApiDocsError(
+        error instanceof Error ? error.message : "Tidak dapat memuat dokumentasi API.",
+      );
+    } finally {
+      setIsApiDocsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void fetchAdminExists();
   }, [fetchAdminExists]);
@@ -169,8 +255,9 @@ export default function AdminPage() {
     if (account?.role === "admin") {
       void fetchClassrooms();
       void fetchAccounts();
+      void fetchApiDocs();
     }
-  }, [account?.role, fetchAccounts, fetchClassrooms]);
+  }, [account?.role, fetchAccounts, fetchApiDocs, fetchClassrooms]);
 
   const handleRefreshClassrooms = async () => {
     setIsRefreshing(true);
@@ -391,6 +478,127 @@ export default function AdminPage() {
     }
   };
 
+  const updateClassroomUserForm = (
+    classroomId: number,
+    updates: Partial<{ name: string; npm: string; code: string }>,
+  ) => {
+    setClassroomUserForms((prev) => {
+      const previous = prev[classroomId] ?? { name: "", npm: "", code: "" };
+      return {
+        ...prev,
+        [classroomId]: {
+          ...previous,
+          ...updates,
+        },
+      };
+    });
+  };
+
+  const handleAddUserToClassroom = async (classroomId: number) => {
+    const form = classroomUserForms[classroomId] ?? { name: "", npm: "", code: "" };
+    const trimmedName = form.name.trim();
+    const trimmedNpm = form.npm.trim();
+    const trimmedCode = form.code.trim();
+
+    if (!trimmedName || !trimmedNpm || !trimmedCode) {
+      setClassroomUserErrors((prev) => ({
+        ...prev,
+        [classroomId]: "Nama, NPM, dan kode wajib diisi.",
+      }));
+      return;
+    }
+
+    setClassroomUserErrors((prev) => ({ ...prev, [classroomId]: null }));
+    setClassroomUserLoading((prev) => ({ ...prev, [classroomId]: true }));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/classrooms/${classroomId}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          npm: trimmedNpm,
+          code: trimmedCode,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.message ?? "Gagal menambahkan user ke classroom.");
+      }
+
+      setClassroomUserForms((prev) => ({
+        ...prev,
+        [classroomId]: { name: "", npm: "", code: "" },
+      }));
+
+      await fetchClassrooms();
+    } catch (error) {
+      setClassroomUserErrors((prev) => ({
+        ...prev,
+        [classroomId]:
+          error instanceof Error ? error.message : "Tidak dapat menambahkan user.",
+      }));
+    } finally {
+      setClassroomUserLoading((prev) => ({ ...prev, [classroomId]: false }));
+    }
+  };
+
+  const handleChangeUserName = (userId: number, value: string) => {
+    setUserNameInputs((prev) => ({ ...prev, [userId]: value }));
+    setUserNameErrors((prev) => ({ ...prev, [userId]: null }));
+  };
+
+  const handleSaveUserName = async (classroomId: number, userId: number) => {
+    const trimmed = (userNameInputs[userId] ?? "").trim();
+    if (!trimmed) {
+      setUserNameErrors((prev) => ({
+        ...prev,
+        [userId]: "Nama user wajib diisi.",
+      }));
+      return;
+    }
+
+    setUserNameSaving((prev) => ({ ...prev, [userId]: true }));
+    setUserNameErrors((prev) => ({ ...prev, [userId]: null }));
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/classrooms/${classroomId}/users/${userId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        },
+      );
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.message ?? "Gagal memperbarui nama user.");
+      }
+
+      await fetchClassrooms();
+    } catch (error) {
+      setUserNameErrors((prev) => ({
+        ...prev,
+        [userId]: error instanceof Error ? error.message : "Tidak dapat memperbarui nama.",
+      }));
+    } finally {
+      setUserNameSaving((prev) => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handlePreviewUserCode = useCallback(
+    (userCode: string) => {
+      if (!userCode) {
+        return;
+      }
+
+      navigate("/", { state: { previewCode: userCode } });
+    },
+    [navigate],
+  );
+
   const handleUpdateRole = async (accountId: number, role: ApiAccount["role"]) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}`, {
@@ -472,11 +680,11 @@ export default function AdminPage() {
                 key={classroom.id}
                 className="rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10"
               >
-                <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
-                      {classroom.name}
-                    </h2>
+                      <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+                            {classroom.name}
+                          </h2>
                     <p className="text-sm text-default-600 dark:text-default-400">
                       Bahasa pemrograman:{" "}
                       <span className="font-medium text-default-800 dark:text-default-200">
@@ -617,21 +825,42 @@ export default function AdminPage() {
                               <th className="px-3 py-2 font-semibold">Kode</th>
                               <th className="px-3 py-2 font-semibold">Terdaftar</th>
                               <th className="px-3 py-2 font-semibold">Pembaruan</th>
+                              <th className="px-3 py-2 text-right font-semibold">Aksi</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-default-200 dark:divide-default-100/20">
                             {classroom.users.map((user) => (
                               <tr key={user.id} className="bg-default-50 dark:bg-transparent">
                                 <td className="px-3 py-2 font-medium text-default-800 dark:text-default-200">
-                                  {user.name}
+                                  <div className="space-y-2">
+                                    <input
+                                      className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
+                                      value={userNameInputs[user.id] ?? ""}
+                                      onChange={(event) =>
+                                        handleChangeUserName(user.id, event.target.value)
+                                      }
+                                      disabled={userNameSaving[user.id]}
+                                    />
+                                    {userNameErrors[user.id] ? (
+                                      <p className="text-xs text-danger-500 dark:text-danger-300">
+                                        {userNameErrors[user.id]}
+                                      </p>
+                                    ) : null}
+                                  </div>
                                 </td>
                                 <td className="px-3 py-2 text-default-600 dark:text-default-300">
                                   {user.npm}
                                 </td>
                                 <td className="px-3 py-2 text-default-600 dark:text-default-300">
-                                  <code className="rounded bg-default-100 px-2 py-1 font-code text-xs dark:bg-default-100/20">
-                                    {user.code}
-                                  </code>
+                                  <Button
+                                    className="font-code"
+                                    color="secondary"
+                                    size="sm"
+                                    variant="flat"
+                                    onPress={() => handlePreviewUserCode(user.code)}
+                                  >
+                                    {user.code || "Lihat Kode"}
+                                  </Button>
                                 </td>
                                 <td className="px-3 py-2 text-default-500 dark:text-default-400">
                                   {formatDateTime(user.createdAt)}
@@ -639,12 +868,85 @@ export default function AdminPage() {
                                 <td className="px-3 py-2 text-default-500 dark:text-default-400">
                                   {formatDateTime(user.updatedAt)}
                                 </td>
+                                <td className="px-3 py-2 text-right">
+                                  <Button
+                                    color="primary"
+                                    size="sm"
+                                    variant="flat"
+                                    isLoading={userNameSaving[user.id]}
+                                    onPress={() => handleSaveUserName(classroom.id, user.id)}
+                                  >
+                                    Simpan Nama
+                                  </Button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
                     )}
+                    <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/50 p-4 dark:border-default-100/40 dark:bg-default-100/10">
+                      <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+                        Tambah User ke Classroom
+                      </h4>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <input
+                          className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                          placeholder="Nama user"
+                          value={classroomUserForms[classroom.id]?.name ?? ""}
+                          onChange={(event) => {
+                            updateClassroomUserForm(classroom.id, { name: event.target.value });
+                            if (classroomUserErrors[classroom.id]) {
+                              setClassroomUserErrors((prev) => ({ ...prev, [classroom.id]: null }));
+                            }
+                          }}
+                          disabled={classroomUserLoading[classroom.id]}
+                        />
+                        <input
+                          className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                          placeholder="NPM"
+                          value={classroomUserForms[classroom.id]?.npm ?? ""}
+                          onChange={(event) => {
+                            updateClassroomUserForm(classroom.id, { npm: event.target.value });
+                            if (classroomUserErrors[classroom.id]) {
+                              setClassroomUserErrors((prev) => ({ ...prev, [classroom.id]: null }));
+                            }
+                          }}
+                          disabled={classroomUserLoading[classroom.id]}
+                        />
+                        <input
+                          className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                          placeholder="Kode unik"
+                          value={classroomUserForms[classroom.id]?.code ?? ""}
+                          onChange={(event) => {
+                            updateClassroomUserForm(classroom.id, { code: event.target.value });
+                            if (classroomUserErrors[classroom.id]) {
+                              setClassroomUserErrors((prev) => ({ ...prev, [classroom.id]: null }));
+                            }
+                          }}
+                          disabled={classroomUserLoading[classroom.id]}
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        {classroomUserErrors[classroom.id] ? (
+                          <p className="text-sm text-danger-500 dark:text-danger-300">
+                            {classroomUserErrors[classroom.id]}
+                          </p>
+                        ) : (
+                          <span className="text-xs text-default-500 dark:text-default-400">
+                            Gunakan kode unik untuk mengidentifikasi user di classroom.
+                          </span>
+                        )}
+                        <Button
+                          color="primary"
+                          variant="solid"
+                          isLoading={classroomUserLoading[classroom.id]}
+                          onPress={() => handleAddUserToClassroom(classroom.id)}
+                        >
+                          Tambahkan User
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -968,9 +1270,91 @@ export default function AdminPage() {
 
         {renderAccounts()}
         {renderClassrooms()}
+        {renderApiDocs()}
       </div>
     );
   };
+
+  const groupedEndpoints = useMemo(() => {
+    return apiEndpoints.reduce<Record<string, ApiEndpoint[]>>((accumulator, endpoint) => {
+      if (!accumulator[endpoint.tag]) {
+        accumulator[endpoint.tag] = [];
+      }
+      accumulator[endpoint.tag].push(endpoint);
+      return accumulator;
+    }, {});
+  }, [apiEndpoints]);
+
+  const renderApiDocs = () => (
+    <section className="space-y-4 rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+            Dokumentasi API
+          </h2>
+          <p className="text-sm text-default-600 dark:text-default-400">
+            Sumber endpoint diambil dari dokumen OpenAPI bawaan aplikasi.
+          </p>
+        </div>
+        <Button color="secondary" variant="flat" onPress={fetchApiDocs} isLoading={isApiDocsLoading}>
+          Muat Ulang Dokumentasi
+        </Button>
+      </div>
+
+      {apiDocsError ? (
+        <div className="rounded-2xl border border-danger-300 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-200/40 dark:bg-danger-500/10 dark:text-danger-200">
+          {apiDocsError}
+        </div>
+      ) : null}
+
+      {isApiDocsLoading ? (
+        <div className="rounded-2xl border border-default-200 bg-default-100 px-4 py-6 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+          Memuat dokumentasi API...
+        </div>
+      ) : apiEndpoints.length === 0 ? (
+        <div className="rounded-2xl border border-default-200 bg-default-100 px-4 py-6 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
+          Tidak ada endpoint yang tersedia dalam dokumen OpenAPI.
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedEndpoints).map(([tag, endpoints]) => (
+            <div key={tag} className="space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-400">
+                {tag}
+              </h3>
+              <div className="space-y-3">
+                {endpoints.map((endpoint) => (
+                  <div
+                    key={`${endpoint.method}-${endpoint.path}-${endpoint.summary}`}
+                    className="rounded-2xl border border-default-200 bg-default-50 p-4 dark:border-default-100/40 dark:bg-default-50/10"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
+                          {endpoint.method}
+                        </span>
+                        <code className="font-code text-sm text-default-800 dark:text-default-100">
+                          {endpoint.path}
+                        </code>
+                      </div>
+                      <span className="text-xs text-default-500 dark:text-default-400">
+                        {endpoint.summary}
+                      </span>
+                    </div>
+                    {endpoint.description ? (
+                      <p className="mt-2 text-sm text-default-600 dark:text-default-400">
+                        {endpoint.description}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 
   return (
     <DefaultLayout>

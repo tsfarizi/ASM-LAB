@@ -8,6 +8,7 @@ import {
   type SVGProps,
 } from "react";
 import { Button } from "@heroui/button";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { API_BASE_URL } from "@/constants/api";
 import { useLanguage } from "@/contexts/language-context";
@@ -60,6 +61,8 @@ const assemblyInstructions = (languageName: string) => [
 ];
 
 export default function IndexPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { activeLanguage, languages, setLanguageById } = useLanguage();
 
   const codeStorageKey = useMemo(
@@ -68,6 +71,7 @@ export default function IndexPage() {
   );
 
   const [code, setCode] = useState("");
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [highlightedCode, setHighlightedCode] = useState("&nbsp;");
   const [isRunning, setIsRunning] = useState(false);
   const defaultOutput = useMemo(
@@ -76,6 +80,17 @@ export default function IndexPage() {
     [activeLanguage.labLabel],
   );
   const [output, setOutput] = useState(defaultOutput);
+  useEffect(() => {
+    const state = location.state as { previewCode?: string } | null;
+
+    if (state?.previewCode !== undefined) {
+      const nextCode = state.previewCode;
+      setIsPreviewMode(true);
+      setCode(nextCode);
+      setOutput(defaultOutput);
+      navigate(location.pathname + location.search, { replace: true, state: null });
+    }
+  }, [defaultOutput, location.pathname, location.search, location.state, navigate]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightContainerRef = useRef<HTMLDivElement>(null);
@@ -87,6 +102,10 @@ export default function IndexPage() {
   }, [defaultOutput]);
 
   useEffect(() => {
+    if (isPreviewMode) {
+      return;
+    }
+
     if (!isBrowser) {
       setCode("");
 
@@ -95,7 +114,7 @@ export default function IndexPage() {
 
     const cached = window.localStorage.getItem(codeStorageKey);
     setCode(cached ?? "");
-  }, [codeStorageKey]);
+  }, [codeStorageKey, isPreviewMode]);
 
   const availableLanguages = useMemo(
     () => languages.filter((language) => !language.isArchived),
@@ -216,11 +235,11 @@ export default function IndexPage() {
       const nextValue = event.target.value;
       setCode(nextValue);
 
-      if (isBrowser) {
+      if (isBrowser && !isPreviewMode) {
         window.localStorage.setItem(codeStorageKey, nextValue);
       }
     },
-    [codeStorageKey],
+    [codeStorageKey, isPreviewMode],
   );
 
   const instructions = useMemo(() => {
@@ -232,6 +251,10 @@ export default function IndexPage() {
   }, [activeLanguage.name, activeLanguage.shortName]);
 
   const handleRun = useCallback(async () => {
+    if (isPreviewMode) {
+      return;
+    }
+
     const trimmed = code.trim();
 
     if (!trimmed) {
@@ -298,12 +321,47 @@ export default function IndexPage() {
     } finally {
       setIsRunning(false);
     }
-  }, [activeLanguage.id, activeLanguage.shortName, code]);
+  }, [activeLanguage.id, activeLanguage.shortName, code, isPreviewMode]);
+
+  const handleExitPreview = useCallback(() => {
+    setIsPreviewMode(false);
+    setIsRunning(false);
+
+    if (isBrowser) {
+      const cached = window.localStorage.getItem(codeStorageKey);
+      setCode(cached ?? "");
+    } else {
+      setCode("");
+    }
+
+    setOutput(defaultOutput);
+    navigate(location.pathname + location.search, { replace: true, state: null });
+  }, [codeStorageKey, defaultOutput, location.pathname, location.search, navigate]);
 
   return (
     <DefaultLayout>
       <section className="flex min-h-[calc(100vh-5.5rem)] flex-col gap-6 py-4 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8">
         <div className="flex flex-col gap-5">
+          {isPreviewMode ? (
+            <div className="flex flex-col gap-3 rounded-3xl border border-blue-300/60 bg-blue-50/80 px-6 py-5 text-sm text-blue-800 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-blue-200/40 dark:bg-blue-500/10 dark:text-blue-100">
+              <div>
+                <h2 className="text-base font-semibold text-blue-900 dark:text-blue-100">
+                  Mode Pratinjau Kode User
+                </h2>
+                <p className="mt-1 text-sm text-blue-800/80 dark:text-blue-100/80">
+                  Editor dalam keadaan hanya-baca. Gunakan tombol di bawah untuk kembali ke mode pengeditan biasa.
+                </p>
+              </div>
+              <Button
+                className="w-full sm:w-auto"
+                color="primary"
+                variant="solid"
+                onPress={handleExitPreview}
+              >
+                Keluar dari Pratinjau
+              </Button>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-3 rounded-3xl border border-default-200 bg-default-50/60 px-6 py-5 shadow-lg backdrop-blur-sm dark:border-default-100/40 dark:bg-default-50/10">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col">
@@ -387,7 +445,9 @@ export default function IndexPage() {
                 <textarea
                   ref={textareaRef}
                   aria-label={`Editor kode ${activeLanguage.labLabel}`}
+                  aria-readonly={isPreviewMode}
                   className="code-editor-textarea font-code caret-default-900 dark:caret-default-50 absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent px-5 py-3 text-sm leading-6 text-transparent outline-none"
+                  readOnly={isPreviewMode}
                   spellCheck={false}
                   value={code}
                   onChange={handleChange}
@@ -430,24 +490,29 @@ export default function IndexPage() {
             </div>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Button
-              className="h-14 w-full justify-center text-base"
-              color="success"
-              isLoading={isRunning}
-              size="lg"
-              startContent={<PlayIcon className="h-4 w-4" />}
-              variant="solid"
-              onPress={handleRun}
-            >
-              Run
-            </Button>
-            <Button
-              className="h-14 w-full justify-center text-base"
-              color="primary"
-              size="lg"
-            >
-              Submit
-            </Button>
+            {isPreviewMode ? (
+              <Button
+                className="h-14 w-full justify-center text-base"
+                color="primary"
+                size="lg"
+                variant="solid"
+                onPress={handleExitPreview}
+              >
+                Kembali ke Editor
+              </Button>
+            ) : (
+              <Button
+                className="h-14 w-full justify-center text-base"
+                color="success"
+                isLoading={isRunning}
+                size="lg"
+                startContent={<PlayIcon className="h-4 w-4" />}
+                variant="solid"
+                onPress={handleRun}
+              >
+                Run
+              </Button>
+            )}
           </div>
         </aside>
       </section>
