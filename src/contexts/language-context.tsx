@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -11,6 +12,7 @@ import {
   judge0Languages,
   type Judge0Language,
 } from "@/constants/judge0-languages";
+import { useAuth } from "@/contexts/auth-context";
 
 export type ExtendedLanguage = Judge0Language & {
   shortName: string;
@@ -23,6 +25,8 @@ type LanguageContextValue = {
   activeLanguage: ExtendedLanguage;
   setLanguageById: (languageId: number) => void;
   description: string;
+  lockedLanguage: ExtendedLanguage | null;
+  isLanguageLocked: boolean;
 };
 
 const LANGUAGE_STORAGE_KEY = "lab-selected-language-id";
@@ -125,6 +129,23 @@ const LanguageContext = createContext<LanguageContextValue | undefined>(
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [activeLanguage, setActiveLanguage] =
     useState<ExtendedLanguage>(getInitialLanguage);
+  const { classroom } = useAuth();
+
+  const lockedLanguage = useMemo(() => {
+    const classroomLanguage = classroom?.programmingLanguage?.trim();
+    if (!classroomLanguage) {
+      return null;
+    }
+
+    return (
+      resolvedLanguages.find((language) => language.name === classroomLanguage) ??
+      resolvedLanguages.find((language) => language.labLabel === classroomLanguage) ??
+      resolvedLanguages.find((language) => language.shortName === classroomLanguage) ??
+      null
+    );
+  }, [classroom?.programmingLanguage]);
+
+  const isLanguageLocked = Boolean(classroom?.languageLocked && lockedLanguage);
 
   useEffect(() => {
     if (!isBrowser) {
@@ -142,6 +163,12 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       `Platform latihan ${activeLanguage.labLabel} ${DEFAULT_DESCRIPTION_SUFFIX}`,
     [activeLanguage.labLabel],
   );
+
+  useEffect(() => {
+    if (isLanguageLocked && lockedLanguage && activeLanguage.id !== lockedLanguage.id) {
+      setActiveLanguage(lockedLanguage);
+    }
+  }, [activeLanguage.id, isLanguageLocked, lockedLanguage]);
 
   useEffect(() => {
     if (!isBrowser) {
@@ -169,20 +196,32 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     updateMeta('meta[property="og:description"]');
   }, [activeLanguage.labLabel, description]);
 
+  const handleSetLanguageById = useCallback(
+    (languageId: number) => {
+      if (isLanguageLocked && lockedLanguage) {
+        setActiveLanguage(lockedLanguage);
+        return;
+      }
+
+      const nextLanguage =
+        resolvedLanguages.find((language) => language.id === languageId) ??
+        resolvedLanguages[0];
+
+      setActiveLanguage(nextLanguage);
+    },
+    [isLanguageLocked, lockedLanguage],
+  );
+
   const value = useMemo<LanguageContextValue>(
     () => ({
       languages: resolvedLanguages,
       activeLanguage,
       description,
-      setLanguageById: (languageId: number) => {
-        const nextLanguage =
-          resolvedLanguages.find((language) => language.id === languageId) ??
-          resolvedLanguages[0];
-
-        setActiveLanguage(nextLanguage);
-      },
+      lockedLanguage,
+      isLanguageLocked,
+      setLanguageById: handleSetLanguageById,
     }),
-    [activeLanguage, description],
+    [activeLanguage, description, handleSetLanguageById, isLanguageLocked, lockedLanguage],
   );
 
   return (

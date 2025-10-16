@@ -7,15 +7,25 @@ type LanguageCardProps = {
   availableLanguages: ExtendedLanguage[];
   archivedLanguages: ExtendedLanguage[];
   onSelect: (languageId: number) => void;
+  isLanguageLocked: boolean;
+  lockedLanguageName?: string | null;
+  lockedByClassroom?: string | null;
 };
 
 export const LanguageCard = ({
   activeLanguage,
   availableLanguages,
   archivedLanguages,
+  isLanguageLocked,
+  lockedLanguageName,
+  lockedByClassroom,
   onSelect,
 }: LanguageCardProps) => {
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    if (isLanguageLocked) {
+      return;
+    }
+
     onSelect(Number(event.target.value));
   };
 
@@ -41,6 +51,8 @@ export const LanguageCard = ({
           <select
             id="language-select"
             className="min-w-[220px] rounded-2xl border border-default-200 bg-white px-4 py-2 text-sm text-default-700 shadow-sm transition hover:border-default-300 focus:border-primary focus:outline-none dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-200"
+            aria-disabled={isLanguageLocked}
+            disabled={isLanguageLocked}
             value={activeLanguage.id}
             onChange={handleChange}
           >
@@ -66,6 +78,12 @@ export const LanguageCard = ({
       {activeLanguage.isArchived ? (
         <p className="rounded-2xl border border-warning-200/60 bg-warning-100/60 px-4 py-2 text-xs text-warning-800 dark:border-warning-200/40 dark:bg-warning-300/10 dark:text-warning-200">
           Bahasa ini sudah tidak lagi didukung secara resmi di Judge0. Hasil eksekusi mungkin tidak stabil.
+        </p>
+      ) : null}
+      {isLanguageLocked ? (
+        <p className="rounded-2xl border border-info-200/60 bg-info-100/60 px-4 py-2 text-xs text-info-800 dark:border-info-200/40 dark:bg-info-300/10 dark:text-info-200">
+          Bahasa pemrograman dikunci ke <strong className="font-semibold">{lockedLanguageName ?? activeLanguage.name}</strong>
+          {lockedByClassroom ? ` oleh classroom ${lockedByClassroom}.` : "."}
         </p>
       ) : null}
     </div>

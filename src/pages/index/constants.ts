@@ -6,3 +6,6 @@ export const isBrowser = typeof window !== "undefined";
 
 export const getCodeStorageKey = (languageId: number) =>
   `${CODE_STORAGE_PREFIX}-${languageId}`;
+
+export const getUserCodeEndpoint = (classroomId: number, userId: number) =>
+  `${API_BASE_URL}/api/classrooms/${classroomId}/users/${userId}`;

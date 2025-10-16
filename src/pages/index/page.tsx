@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth, type ClassroomUser } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
 import DefaultLayout from "@/layouts/default";
 
@@ -17,7 +18,12 @@ import { InstructionsPanel } from "./components/InstructionsPanel";
 import { LanguageCard } from "./components/LanguageCard";
 import { OutputPanel } from "./components/OutputPanel";
 import { PreviewBanner } from "./components/PreviewBanner";
-import { getCodeStorageKey, isBrowser, SUBMISSION_ENDPOINT } from "./constants";
+import {
+  getCodeStorageKey,
+  getUserCodeEndpoint,
+  isBrowser,
+  SUBMISSION_ENDPOINT,
+} from "./constants";
 import { escapeHtml, withTrailingNbsp } from "./utils/highlight";
 import { resolveInstructions } from "./utils/instructions";
 
@@ -30,7 +36,9 @@ type PreviewState = {
 export const IndexPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { activeLanguage, languages, setLanguageById } = useLanguage();
+  const { classroom, syncClassroom } = useAuth();
+  const { activeLanguage, languages, lockedLanguage, isLanguageLocked, setLanguageById } =
+    useLanguage();
 
   const codeStorageKey = useMemo(
     () => getCodeStorageKey(activeLanguage.id),
@@ -91,6 +99,14 @@ export const IndexPage = () => {
     () => languages.filter((language) => language.isArchived),
     [languages],
   );
+
+  const lockedLanguageName = useMemo(() => {
+    if (lockedLanguage) {
+      return lockedLanguage.name;
+    }
+
+    return classroom?.programmingLanguage ?? null;
+  }, [classroom?.programmingLanguage, lockedLanguage]);
 
   const lineNumbers = useMemo(() => {
     const totalLines = code.split("\n").length;
@@ -221,6 +237,79 @@ export const IndexPage = () => {
     setOutput(`Mengirim kode ${activeLanguage.shortName} ke server untuk dieksekusi...`);
 
     try {
+      if (classroom?.id && classroom?.user?.id) {
+        const classroomUser = classroom.user;
+        if (!classroomUser) {
+          throw new Error("Data user classroom tidak ditemukan.");
+        }
+
+        const response = await fetch(
+          getUserCodeEndpoint(classroom.id, classroom.user.id),
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              code: trimmed,
+            }),
+          },
+        );
+
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          const message =
+            payload && typeof (payload as { message?: unknown }).message === "string"
+              ? (payload as { message: string }).message
+              : `HTTP ${response.status} ${response.statusText}`;
+          throw new Error(`Gagal menyimpan kode: ${message}`);
+        }
+
+        const normalizeUser = (value: unknown): ClassroomUser | null => {
+          if (typeof value !== "object" || value === null) {
+            return null;
+          }
+
+          const record = value as Record<string, unknown>;
+          const userId = Number.parseInt(String(record.id ?? ""), 10);
+          if (!Number.isFinite(userId)) {
+            return null;
+          }
+
+          return {
+            id: userId,
+            name: typeof record.name === "string" ? record.name : classroomUser.name,
+            npm: typeof record.npm === "string" ? record.npm : classroomUser.npm,
+            code: typeof record.code === "string" ? record.code : trimmed,
+            createdAt:
+              typeof record.createdAt === "string"
+                ? record.createdAt
+                : classroomUser.createdAt,
+            updatedAt:
+              typeof record.updatedAt === "string"
+                ? record.updatedAt
+                : new Date().toISOString(),
+          };
+        };
+
+        const nextUser = normalizeUser(payload) ?? {
+          ...classroomUser,
+          code: trimmed,
+          updatedAt: new Date().toISOString(),
+        };
+
+        syncClassroom((previous) => {
+          if (!previous) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            user: nextUser,
+          };
+        });
+      }
+
       const response = await fetch(SUBMISSION_ENDPOINT, {
         method: "POST",
         headers: {
@@ -268,7 +357,13 @@ export const IndexPage = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [activeLanguage.id, activeLanguage.shortName, code]);
+  }, [
+    activeLanguage.id,
+    activeLanguage.shortName,
+    classroom,
+    code,
+    syncClassroom,
+  ]);
 
   const handleExitPreview = useCallback(() => {
     setIsPreviewMode(false);
@@ -301,6 +396,9 @@ export const IndexPage = () => {
             activeLanguage={activeLanguage}
             archivedLanguages={archivedLanguages}
             availableLanguages={availableLanguages}
+            isLanguageLocked={isLanguageLocked}
+            lockedByClassroom={classroom?.name ?? null}
+            lockedLanguageName={lockedLanguageName}
             onSelect={handleSelectLanguage}
           />
           <CodeEditor
