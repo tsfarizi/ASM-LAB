@@ -60,8 +60,6 @@ export const IndexPage = () => {
   const [output, setOutput] = useState(defaultOutput);
 
   useEffect(() => {
-    const state = location.state as PreviewState;
-
     if (hasPreviewState) {
       setIsPreviewMode(true);
       setCode(previewCode);
