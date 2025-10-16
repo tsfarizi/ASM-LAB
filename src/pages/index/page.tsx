@@ -36,7 +36,7 @@ type PreviewState = {
 export const IndexPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { classroom, syncClassroom } = useAuth();
+  const { account, classroom, syncClassroom } = useAuth();
   const { activeLanguage, languages, lockedLanguage, isLanguageLocked, setLanguageById } =
     useLanguage();
 
@@ -318,6 +318,7 @@ export const IndexPage = () => {
         body: JSON.stringify({
           source_code: trimmed,
           language_id: activeLanguage.id,
+          npm: classroom?.user?.npm || account?.npm || "",
         }),
       });
 
@@ -358,6 +359,7 @@ export const IndexPage = () => {
       setIsRunning(false);
     }
   }, [
+    account,
     activeLanguage.id,
     activeLanguage.shortName,
     classroom,
