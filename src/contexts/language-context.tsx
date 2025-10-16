@@ -12,7 +12,7 @@ import {
   type Judge0Language,
 } from "@/constants/judge0-languages";
 
-type ExtendedLanguage = Judge0Language & {
+export type ExtendedLanguage = Judge0Language & {
   shortName: string;
   labLabel: string;
   prismLanguage: string;
