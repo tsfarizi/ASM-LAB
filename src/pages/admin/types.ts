@@ -24,5 +24,9 @@ export type ApiAccount = AuthAccount;
 export type ClassroomUserForm = {
   name: string;
   npm: string;
-  code: string;
+};
+
+export type ManagedUserForm = {
+  name: string;
+  npm: string;
 };

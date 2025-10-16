@@ -210,10 +210,6 @@ export const IndexPage = () => {
   );
 
   const handleRun = useCallback(async () => {
-    if (isPreviewMode) {
-      return;
-    }
-
     const trimmed = code.trim();
 
     if (!trimmed) {
@@ -272,7 +268,7 @@ export const IndexPage = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [activeLanguage.id, activeLanguage.shortName, code, isPreviewMode]);
+  }, [activeLanguage.id, activeLanguage.shortName, code]);
 
   const handleExitPreview = useCallback(() => {
     setIsPreviewMode(false);

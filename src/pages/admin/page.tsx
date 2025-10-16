@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { API_BASE_URL } from "@/constants/api";
 import { useAuth } from "@/contexts/auth-context";
+import { useLanguage } from "@/contexts/language-context";
 import DefaultLayout from "@/layouts/default";
 
 import { AccountSection } from "./components/AccountSection";
@@ -12,7 +13,7 @@ import { AdminLoginPrompt } from "./components/AdminLoginPrompt";
 import { ClassroomSection } from "./components/ClassroomSection";
 import { FirstAdminRegistration } from "./components/FirstAdminRegistration";
 import { roleLabel } from "./utils";
-import { ApiAccount, ApiClassroom, ClassroomUserForm } from "./types";
+import { ApiAccount, ApiClassroom, ClassroomUserForm, ManagedUserForm } from "./types";
 
 type AdminExistsResponse = {
   exists: boolean;
@@ -21,9 +22,16 @@ type AdminExistsResponse = {
 type ClassroomUserState = Record<number, ClassroomUserForm>;
 type ClassroomUserErrors = Record<number, string | null>;
 type ClassroomUserLoading = Record<number, boolean>;
-type UserNameState = Record<number, string>;
-type UserNameErrors = Record<number, string | null>;
-type UserNameLoading = Record<number, boolean>;
+type ManagedUserState = Record<number, ManagedUserForm>;
+type ManagedUserErrors = Record<number, string | null>;
+type ManagedUserSaving = Record<number, boolean>;
+type ManagedUserDeleting = Record<number, boolean>;
+
+// Backend validation requires the `code` field, so submit a single space
+// placeholder when creating classroom users. The value is treated as empty on
+// the client so admins still see a "Belum ada kode" hint until the user runs
+// their first program.
+const EMPTY_CODE_PLACEHOLDER = " ";
 
 export const AdminPage = () => {
   const navigate = useNavigate();
@@ -38,14 +46,14 @@ export const AdminPage = () => {
   const [classroomError, setClassroomError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newClassroomName, setNewClassroomName] = useState("");
-  const [newClassroomLanguage, setNewClassroomLanguage] = useState("");
+  const [newClassroomLanguageId, setNewClassroomLanguageId] = useState<number | null>(null);
   const [newClassroomLockLanguage, setNewClassroomLockLanguage] = useState(false);
   const [classroomFormError, setClassroomFormError] = useState<string | null>(null);
   const [classroomActionError, setClassroomActionError] = useState<string | null>(null);
   const [isCreatingClassroom, setIsCreatingClassroom] = useState(false);
   const [editingClassroomId, setEditingClassroomId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [editingLanguage, setEditingLanguage] = useState("");
+  const [editingLanguageId, setEditingLanguageId] = useState<number | null>(null);
   const [editingLockLanguage, setEditingLockLanguage] = useState(false);
   const [editingError, setEditingError] = useState<string | null>(null);
   const [isSavingClassroom, setIsSavingClassroom] = useState(false);
@@ -68,9 +76,37 @@ export const AdminPage = () => {
   const [classroomUserErrors, setClassroomUserErrors] = useState<ClassroomUserErrors>({});
   const [classroomUserLoading, setClassroomUserLoading] = useState<ClassroomUserLoading>({});
 
-  const [userNameInputs, setUserNameInputs] = useState<UserNameState>({});
-  const [userNameErrors, setUserNameErrors] = useState<UserNameErrors>({});
-  const [userNameSaving, setUserNameSaving] = useState<UserNameLoading>({});
+  const [managedUserForms, setManagedUserForms] = useState<ManagedUserState>({});
+  const [managedUserErrors, setManagedUserErrors] = useState<ManagedUserErrors>({});
+  const [managedUserSaving, setManagedUserSaving] = useState<ManagedUserSaving>({});
+  const [managedUserDeleting, setManagedUserDeleting] = useState<ManagedUserDeleting>({});
+
+  const { languages } = useLanguage();
+
+  const availableLanguages = useMemo(
+    () => languages.filter((language) => !language.isArchived),
+    [languages],
+  );
+
+  const archivedLanguages = useMemo(
+    () => languages.filter((language) => language.isArchived),
+    [languages],
+  );
+
+  const findLanguageByName = useCallback(
+    (label: string | null | undefined) => {
+      if (!label) {
+        return null;
+      }
+
+      return (
+        languages.find((language) => language.name === label) ??
+        languages.find((language) => language.labLabel === label) ??
+        languages.find((language) => language.shortName === label)
+      ) ?? null;
+    },
+    [languages],
+  );
 
   useEffect(() => {
     accountRef.current = account ?? null;
@@ -109,30 +145,37 @@ export const AdminPage = () => {
 
       const data: ApiClassroom[] = await response.json();
       setClassrooms(data);
-      setUserNameInputs(
-        data.reduce<UserNameState>((accumulator, classroom) => {
+      setManagedUserForms(
+        data.reduce<ManagedUserState>((accumulator, classroom) => {
           classroom.users.forEach((user) => {
-            accumulator[user.id] = user.name;
+            accumulator[user.id] = { name: user.name, npm: user.npm };
           });
           return accumulator;
         }, {}),
       );
-      setUserNameErrors((prev) => {
-        const next = { ...prev };
+      const collectValidIds = () => {
         const validIds = new Set<number>();
         data.forEach((classroom) => {
           classroom.users.forEach((user) => {
             validIds.add(user.id);
           });
         });
+        return validIds;
+      };
+      const validIds = collectValidIds();
+      const pruneByValidIds = <T extends Record<number, unknown>>(state: T) => {
+        const next = { ...state } as Record<number, unknown>;
         Object.keys(next).forEach((key) => {
           const id = Number.parseInt(key, 10);
           if (!validIds.has(id)) {
             delete next[id];
           }
         });
-        return next;
-      });
+        return next as T;
+      };
+      setManagedUserErrors((prev) => pruneByValidIds(prev));
+      setManagedUserSaving((prev) => pruneByValidIds(prev));
+      setManagedUserDeleting((prev) => pruneByValidIds(prev));
     } catch (error) {
       setClassroomError(
         error instanceof Error
@@ -206,14 +249,16 @@ export const AdminPage = () => {
       return;
     }
 
-    const trimmedLanguage = newClassroomLanguage.trim();
+    const selectedLanguage =
+      languages.find((language) => language.id === newClassroomLanguageId) ?? null;
+
     const payload: Record<string, unknown> = {
       name: trimmedName,
-      lockLanguage: newClassroomLockLanguage,
+      lockLanguage: selectedLanguage ? newClassroomLockLanguage : false,
     };
 
-    if (trimmedLanguage) {
-      payload.programmingLanguage = trimmedLanguage;
+    if (selectedLanguage) {
+      payload.programmingLanguage = selectedLanguage.name;
     }
 
     setClassroomFormError(null);
@@ -234,7 +279,7 @@ export const AdminPage = () => {
       }
 
       setNewClassroomName("");
-      setNewClassroomLanguage("");
+      setNewClassroomLanguageId(null);
       setNewClassroomLockLanguage(false);
       await fetchClassrooms();
     } catch (error) {
@@ -251,8 +296,9 @@ export const AdminPage = () => {
     setEditingError(null);
     setEditingClassroomId(classroom.id);
     setEditingName(classroom.name);
-    setEditingLanguage(classroom.programmingLanguage ?? "");
-    setEditingLockLanguage(classroom.languageLocked);
+    const matchedLanguage = findLanguageByName(classroom.programmingLanguage);
+    setEditingLanguageId(matchedLanguage?.id ?? null);
+    setEditingLockLanguage(matchedLanguage ? classroom.languageLocked : false);
   };
 
   const handleCancelEditClassroom = () => {
@@ -261,7 +307,7 @@ export const AdminPage = () => {
     }
     setEditingClassroomId(null);
     setEditingName("");
-    setEditingLanguage("");
+    setEditingLanguageId(null);
     setEditingLockLanguage(false);
     setClassroomActionError(null);
     setEditingError(null);
@@ -278,11 +324,12 @@ export const AdminPage = () => {
       return;
     }
 
-    const trimmedLanguage = editingLanguage.trim();
+    const selectedLanguage =
+      languages.find((language) => language.id === editingLanguageId) ?? null;
     const payload = {
       name: trimmedName,
-      programmingLanguage: trimmedLanguage ? trimmedLanguage : null,
-      lockLanguage: editingLockLanguage,
+      programmingLanguage: selectedLanguage ? selectedLanguage.name : null,
+      lockLanguage: selectedLanguage ? editingLockLanguage : false,
     };
 
     setClassroomActionError(null);
@@ -408,7 +455,7 @@ export const AdminPage = () => {
     updates: Partial<ClassroomUserForm>,
   ) => {
     setClassroomUserForms((prev) => {
-      const previous = prev[classroomId] ?? { name: "", npm: "", code: "" };
+      const previous = prev[classroomId] ?? { name: "", npm: "" };
       return {
         ...prev,
         [classroomId]: {
@@ -421,15 +468,14 @@ export const AdminPage = () => {
   };
 
   const handleAddUserToClassroom = async (classroomId: number) => {
-    const form = classroomUserForms[classroomId] ?? { name: "", npm: "", code: "" };
+    const form = classroomUserForms[classroomId] ?? { name: "", npm: "" };
     const trimmedName = form.name.trim();
     const trimmedNpm = form.npm.trim();
-    const trimmedCode = form.code.trim();
 
-    if (!trimmedName || !trimmedNpm || !trimmedCode) {
+    if (!trimmedName || !trimmedNpm) {
       setClassroomUserErrors((prev) => ({
         ...prev,
-        [classroomId]: "Nama, NPM, dan kode wajib diisi.",
+        [classroomId]: "Nama dan NPM wajib diisi.",
       }));
       return;
     }
@@ -444,7 +490,7 @@ export const AdminPage = () => {
         body: JSON.stringify({
           name: trimmedName,
           npm: trimmedNpm,
-          code: trimmedCode,
+          code: EMPTY_CODE_PLACEHOLDER,
         }),
       });
 
@@ -455,65 +501,112 @@ export const AdminPage = () => {
 
       setClassroomUserForms((prev) => ({
         ...prev,
-        [classroomId]: { name: "", npm: "", code: "" },
+        [classroomId]: { name: "", npm: "" },
       }));
 
       await fetchClassrooms();
     } catch (error) {
       setClassroomUserErrors((prev) => ({
         ...prev,
-        [classroomId]:
-          error instanceof Error ? error.message : "Tidak dapat menambahkan user.",
+        [classroomId]: error instanceof Error
+          ? error.message
+          : "Tidak dapat menambahkan user.",
       }));
     } finally {
       setClassroomUserLoading((prev) => ({ ...prev, [classroomId]: false }));
     }
   };
 
-  const handleChangeUserName = (userId: number, value: string) => {
-    setUserNameInputs((prev) => ({ ...prev, [userId]: value }));
-    setUserNameErrors((prev) => ({ ...prev, [userId]: null }));
+  const handleChangeManagedUserForm = (
+    userId: number,
+    updates: Partial<ManagedUserForm>,
+  ) => {
+    setManagedUserForms((prev) => {
+      const previous = prev[userId] ?? { name: "", npm: "" };
+      return {
+        ...prev,
+        [userId]: {
+          ...previous,
+          ...updates,
+        },
+      };
+    });
+    setManagedUserErrors((prev) => ({ ...prev, [userId]: null }));
   };
 
-  const handleSaveUserName = async (classroomId: number, userId: number) => {
-    const trimmed = (userNameInputs[userId] ?? "").trim();
-    if (!trimmed) {
-      setUserNameErrors((prev) => ({
+  const handleSaveManagedUser = async (classroomId: number, userId: number) => {
+    const form = managedUserForms[userId] ?? { name: "", npm: "" };
+    const trimmedName = form.name.trim();
+    const trimmedNpm = form.npm.trim();
+
+    if (!trimmedName || !trimmedNpm) {
+      setManagedUserErrors((prev) => ({
         ...prev,
-        [userId]: "Nama user wajib diisi.",
+        [userId]: "Nama dan NPM wajib diisi.",
       }));
       return;
     }
 
-    setUserNameSaving((prev) => ({ ...prev, [userId]: true }));
-    setUserNameErrors((prev) => ({ ...prev, [userId]: null }));
+    setManagedUserSaving((prev) => ({ ...prev, [userId]: true }));
+    setManagedUserErrors((prev) => ({ ...prev, [userId]: null }));
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/classrooms/${classroomId}/users/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify({ name: trimmedName, npm: trimmedNpm }),
       });
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.message ?? "Gagal memperbarui nama user.");
+        throw new Error(payload?.message ?? "Gagal memperbarui data user.");
       }
 
       await fetchClassrooms();
     } catch (error) {
-      setUserNameErrors((prev) => ({
+      setManagedUserErrors((prev) => ({
         ...prev,
-        [userId]: error instanceof Error ? error.message : "Tidak dapat memperbarui nama.",
+        [userId]: error instanceof Error
+          ? error.message
+          : "Tidak dapat memperbarui user.",
       }));
     } finally {
-      setUserNameSaving((prev) => ({ ...prev, [userId]: false }));
+      setManagedUserSaving((prev) => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleDeleteManagedUser = async (classroomId: number, userId: number) => {
+    if (!window.confirm("Hapus user ini?")) {
+      return;
+    }
+
+    setManagedUserErrors((prev) => ({ ...prev, [userId]: null }));
+    setManagedUserDeleting((prev) => ({ ...prev, [userId]: true }));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/classrooms/${classroomId}/users/${userId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.message ?? "Gagal menghapus user.");
+      }
+
+      await fetchClassrooms();
+    } catch (error) {
+      setManagedUserErrors((prev) => ({
+        ...prev,
+        [userId]: error instanceof Error ? error.message : "Tidak dapat menghapus user.",
+      }));
+    } finally {
+      setManagedUserDeleting((prev) => ({ ...prev, [userId]: false }));
     }
   };
 
   const handlePreviewUserCode = useCallback(
     (userCode: string) => {
-      if (!userCode) {
+      if (!userCode.trim()) {
         return;
       }
 
@@ -578,14 +671,21 @@ export const AdminPage = () => {
     }
   };
 
-  const handleChangeNewClassroomLanguage = (value: string) => {
-    setNewClassroomLanguage(value);
+  const handleChangeNewClassroomLanguage = (value: number | null) => {
+    setNewClassroomLanguageId(value);
+    if (value === null) {
+      setNewClassroomLockLanguage(false);
+    }
     if (classroomFormError) {
       setClassroomFormError(null);
     }
   };
 
   const handleToggleNewClassroomLock = (value: boolean) => {
+    if (newClassroomLanguageId === null) {
+      setNewClassroomLockLanguage(false);
+      return;
+    }
     setNewClassroomLockLanguage(value);
   };
 
@@ -596,14 +696,21 @@ export const AdminPage = () => {
     }
   };
 
-  const handleChangeEditingLanguage = (value: string) => {
-    setEditingLanguage(value);
+  const handleChangeEditingLanguage = (value: number | null) => {
+    setEditingLanguageId(value);
+    if (value === null) {
+      setEditingLockLanguage(false);
+    }
     if (editingError) {
       setEditingError(null);
     }
   };
 
   const handleToggleEditingLockLanguage = (value: boolean) => {
+    if (editingLanguageId === null) {
+      setEditingLockLanguage(false);
+      return;
+    }
     setEditingLockLanguage(value);
     if (editingError) {
       setEditingError(null);
@@ -696,6 +803,8 @@ export const AdminPage = () => {
           onUpdateRole={handleUpdateRole}
         />
         <ClassroomSection
+          archivedLanguages={archivedLanguages}
+          availableLanguages={availableLanguages}
           classroomActionError={classroomActionError}
           classroomError={classroomError}
           classroomFormError={classroomFormError}
@@ -706,14 +815,18 @@ export const AdminPage = () => {
           deletingClassroomId={deletingClassroomId}
           editingClassroomId={editingClassroomId}
           editingError={editingError}
-          editingLanguage={editingLanguage}
+          editingLanguageId={editingLanguageId}
           editingLockLanguage={editingLockLanguage}
           editingName={editingName}
-          isLoading={isClassroomLoading}
           isCreatingClassroom={isCreatingClassroom}
+          isLoading={isClassroomLoading}
           isRefreshing={isRefreshing}
           isSavingClassroom={isSavingClassroom}
-          newClassroomLanguage={newClassroomLanguage}
+          managedUserDeleting={managedUserDeleting}
+          managedUserErrors={managedUserErrors}
+          managedUserForms={managedUserForms}
+          managedUserSaving={managedUserSaving}
+          newClassroomLanguageId={newClassroomLanguageId}
           newClassroomLockLanguage={newClassroomLockLanguage}
           newClassroomName={newClassroomName}
           onAddUserToClassroom={handleAddUserToClassroom}
@@ -721,21 +834,19 @@ export const AdminPage = () => {
           onChangeClassroomUserForm={updateClassroomUserForm}
           onChangeEditingLanguage={handleChangeEditingLanguage}
           onChangeEditingName={handleChangeEditingName}
+          onChangeManagedUserForm={handleChangeManagedUserForm}
           onChangeNewClassroomLanguage={handleChangeNewClassroomLanguage}
           onChangeNewClassroomName={handleChangeNewClassroomName}
-          onChangeUserName={handleChangeUserName}
           onCreateClassroom={handleCreateClassroom}
           onDeleteClassroom={handleDeleteClassroom}
+          onDeleteManagedUser={handleDeleteManagedUser}
           onEditClassroom={handleBeginEditClassroom}
           onPreviewUserCode={handlePreviewUserCode}
           onRefresh={handleRefreshClassrooms}
-          onSaveUserName={handleSaveUserName}
+          onSaveManagedUser={handleSaveManagedUser}
           onToggleEditingLockLanguage={handleToggleEditingLockLanguage}
           onToggleNewClassroomLock={handleToggleNewClassroomLock}
           onUpdateClassroom={handleUpdateClassroom}
-          userNameErrors={userNameErrors}
-          userNameInputs={userNameInputs}
-          userNameSaving={userNameSaving}
         />
       </div>
     );

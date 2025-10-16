@@ -16,6 +16,17 @@ export const ActionButtons = ({
   onExitPreview,
 }: ActionButtonsProps) => (
   <div className="flex flex-col gap-4 sm:flex-row">
+    <Button
+      className="h-14 w-full justify-center text-base"
+      color="success"
+      isLoading={isRunning}
+      size="lg"
+      startContent={<PlayIcon className="h-4 w-4" />}
+      variant="solid"
+      onPress={onRun}
+    >
+      Run
+    </Button>
     {isPreviewMode ? (
       <Button
         className="h-14 w-full justify-center text-base"
@@ -26,18 +37,6 @@ export const ActionButtons = ({
       >
         Kembali ke Editor
       </Button>
-    ) : (
-      <Button
-        className="h-14 w-full justify-center text-base"
-        color="success"
-        isLoading={isRunning}
-        size="lg"
-        startContent={<PlayIcon className="h-4 w-4" />}
-        variant="solid"
-        onPress={onRun}
-      >
-        Run
-      </Button>
-    )}
+    ) : null}
   </div>
 );
