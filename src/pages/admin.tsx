@@ -48,7 +48,13 @@ const roleLabel: Record<ApiAccount["role"], string> = {
 
 export default function AdminPage() {
   const navigate = useNavigate();
-  const { account, login, logout, syncAccount, isLoading: authLoading } = useAuth();
+  const {
+    account,
+    login,
+    logout,
+    syncAccount,
+    isLoading: authLoading,
+  } = useAuth();
   const accountRef = useRef<AuthAccount | null>(account);
 
   const [adminExists, setAdminExists] = useState<boolean | null>(null);
@@ -60,17 +66,26 @@ export default function AdminPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newClassroomName, setNewClassroomName] = useState("");
   const [newClassroomLanguage, setNewClassroomLanguage] = useState("");
-  const [newClassroomLockLanguage, setNewClassroomLockLanguage] = useState(false);
-  const [classroomFormError, setClassroomFormError] = useState<string | null>(null);
-  const [classroomActionError, setClassroomActionError] = useState<string | null>(null);
+  const [newClassroomLockLanguage, setNewClassroomLockLanguage] =
+    useState(false);
+  const [classroomFormError, setClassroomFormError] = useState<string | null>(
+    null,
+  );
+  const [classroomActionError, setClassroomActionError] = useState<
+    string | null
+  >(null);
   const [isCreatingClassroom, setIsCreatingClassroom] = useState(false);
-  const [editingClassroomId, setEditingClassroomId] = useState<number | null>(null);
+  const [editingClassroomId, setEditingClassroomId] = useState<number | null>(
+    null,
+  );
   const [editingName, setEditingName] = useState("");
   const [editingLanguage, setEditingLanguage] = useState("");
   const [editingLockLanguage, setEditingLockLanguage] = useState(false);
   const [editingError, setEditingError] = useState<string | null>(null);
   const [isSavingClassroom, setIsSavingClassroom] = useState(false);
-  const [deletingClassroomId, setDeletingClassroomId] = useState<number | null>(null);
+  const [deletingClassroomId, setDeletingClassroomId] = useState<number | null>(
+    null,
+  );
 
   const [accounts, setAccounts] = useState<ApiAccount[]>([]);
   const [accountsError, setAccountsError] = useState<string | null>(null);
@@ -81,30 +96,43 @@ export default function AdminPage() {
   const [isRegisteringAdmin, setIsRegisteringAdmin] = useState(false);
 
   const [newAccountNpm, setNewAccountNpm] = useState("");
-  const [newAccountRole, setNewAccountRole] = useState<ApiAccount["role"]>("user");
+  const [newAccountRole, setNewAccountRole] =
+    useState<ApiAccount["role"]>("user");
   const [accountFormError, setAccountFormError] = useState<string | null>(null);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
 
   const [classroomUserForms, setClassroomUserForms] = useState<
     Record<number, { name: string; npm: string; code: string }>
   >({});
-  const [classroomUserErrors, setClassroomUserErrors] = useState<Record<number, string | null>>({});
-  const [classroomUserLoading, setClassroomUserLoading] = useState<Record<number, boolean>>({});
+  const [classroomUserErrors, setClassroomUserErrors] = useState<
+    Record<number, string | null>
+  >({});
+  const [classroomUserLoading, setClassroomUserLoading] = useState<
+    Record<number, boolean>
+  >({});
 
-  const [userNameInputs, setUserNameInputs] = useState<Record<number, string>>({});
-  const [userNameErrors, setUserNameErrors] = useState<Record<number, string | null>>({});
-  const [userNameSaving, setUserNameSaving] = useState<Record<number, boolean>>({});
+  const [userNameInputs, setUserNameInputs] = useState<Record<number, string>>(
+    {},
+  );
+  const [userNameErrors, setUserNameErrors] = useState<
+    Record<number, string | null>
+  >({});
+  const [userNameSaving, setUserNameSaving] = useState<Record<number, boolean>>(
+    {},
+  );
 
   const [apiEndpoints, setApiEndpoints] = useState<ApiEndpoint[]>([]);
-  const [isApiDocsLoading, setIsApiDocsLoading] = useState(false);
-  const [apiDocsError, setApiDocsError] = useState<string | null>(null);
 
   useEffect(() => {
     accountRef.current = account ?? null;
   }, [account]);
 
   const totalUsers = useMemo(
-    () => classrooms.reduce((count, classroom) => count + classroom.users.length, 0),
+    () =>
+      classrooms.reduce(
+        (count, classroom) => count + classroom.users.length,
+        0,
+      ),
     [classrooms],
   );
 
@@ -177,6 +205,7 @@ export default function AdminPage() {
     setIsAccountsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/accounts`);
+
       if (!response.ok) {
         throw new Error(`Gagal memuat data akun (${response.status})`);
       }
@@ -207,57 +236,6 @@ export default function AdminPage() {
     }
   }, [syncAccount]);
 
-  const fetchApiDocs = useCallback(async () => {
-    setApiDocsError(null);
-    setIsApiDocsLoading(true);
-    try {
-      const response = await fetch("/openapi.json");
-      if (!response.ok) {
-        throw new Error(`Gagal memuat dokumentasi API (${response.status})`);
-      }
-
-      const data = (await response.json()) as {
-        paths?: Record<
-          string,
-          Record<
-            string,
-            {
-              tags?: string[];
-              summary?: string;
-              description?: string;
-              operationId?: string;
-            }
-          >
-        >;
-      };
-
-      const endpoints: ApiEndpoint[] = [];
-      if (data.paths) {
-        Object.entries(data.paths).forEach(([path, methods]) => {
-          Object.entries(methods).forEach(([method, operation]) => {
-            const tag = operation.tags?.[0] ?? "Lainnya";
-            const summary = operation.summary ?? operation.operationId ?? "Tanpa judul";
-            endpoints.push({
-              method: method.toUpperCase(),
-              path,
-              summary,
-              description: operation.description ?? "",
-              tag,
-            });
-          });
-        });
-      }
-
-      setApiEndpoints(endpoints.sort((a, b) => a.path.localeCompare(b.path)));
-    } catch (error) {
-      setApiDocsError(
-        error instanceof Error ? error.message : "Tidak dapat memuat dokumentasi API.",
-      );
-    } finally {
-      setIsApiDocsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     void fetchAdminExists();
   }, [fetchAdminExists]);
@@ -281,11 +259,11 @@ export default function AdminPage() {
 
   const handleCreateClassroom = async () => {
     const trimmedName = newClassroomName.trim();
+
     if (!trimmedName) {
       setClassroomFormError("Nama classroom wajib diisi.");
       return;
     }
-
     const trimmedLanguage = newClassroomLanguage.trim();
     const payload: Record<string, unknown> = {
       name: trimmedName,
@@ -295,7 +273,6 @@ export default function AdminPage() {
     if (trimmedLanguage) {
       payload.programmingLanguage = trimmedLanguage;
     }
-
     setClassroomFormError(null);
     setClassroomActionError(null);
     setEditingError(null);
@@ -372,11 +349,14 @@ export default function AdminPage() {
     setIsSavingClassroom(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/classrooms/${editingClassroomId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/classrooms/${editingClassroomId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -406,9 +386,12 @@ export default function AdminPage() {
     setDeletingClassroomId(classroomId);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/classrooms/${classroomId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/classrooms/${classroomId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -506,7 +489,11 @@ export default function AdminPage() {
   };
 
   const handleAddUserToClassroom = async (classroomId: number) => {
-    const form = classroomUserForms[classroomId] ?? { name: "", npm: "", code: "" };
+    const form = classroomUserForms[classroomId] ?? {
+      name: "",
+      npm: "",
+      code: "",
+    };
     const trimmedName = form.name.trim();
     const trimmedNpm = form.npm.trim();
     const trimmedCode = form.code.trim();
@@ -523,19 +510,24 @@ export default function AdminPage() {
     setClassroomUserLoading((prev) => ({ ...prev, [classroomId]: true }));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/classrooms/${classroomId}/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: trimmedName,
-          npm: trimmedNpm,
-          code: trimmedCode,
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/classrooms/${classroomId}/users`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: trimmedName,
+            npm: trimmedNpm,
+            code: trimmedCode,
+          }),
+        },
+      );
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.message ?? "Gagal menambahkan user ke classroom.");
+        throw new Error(
+          payload?.message ?? "Gagal menambahkan user ke classroom.",
+        );
       }
 
       setClassroomUserForms((prev) => ({
@@ -548,7 +540,9 @@ export default function AdminPage() {
       setClassroomUserErrors((prev) => ({
         ...prev,
         [classroomId]:
-          error instanceof Error ? error.message : "Tidak dapat menambahkan user.",
+          error instanceof Error
+            ? error.message
+            : "Tidak dapat menambahkan user.",
       }));
     } finally {
       setClassroomUserLoading((prev) => ({ ...prev, [classroomId]: false }));
@@ -592,7 +586,10 @@ export default function AdminPage() {
     } catch (error) {
       setUserNameErrors((prev) => ({
         ...prev,
-        [userId]: error instanceof Error ? error.message : "Tidak dapat memperbarui nama.",
+        [userId]:
+          error instanceof Error
+            ? error.message
+            : "Tidak dapat memperbarui nama.",
       }));
     } finally {
       setUserNameSaving((prev) => ({ ...prev, [userId]: false }));
@@ -610,13 +607,19 @@ export default function AdminPage() {
     [navigate],
   );
 
-  const handleUpdateRole = async (accountId: number, role: ApiAccount["role"]) => {
+  const handleUpdateRole = async (
+    accountId: number,
+    role: ApiAccount["role"],
+  ) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/accounts/${accountId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role }),
+        },
+      );
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
@@ -626,7 +629,9 @@ export default function AdminPage() {
       await fetchAccounts();
     } catch (error) {
       setAccountsError(
-        error instanceof Error ? error.message : "Tidak dapat memperbarui role.",
+        error instanceof Error
+          ? error.message
+          : "Tidak dapat memperbarui role.",
       );
     }
   };
@@ -637,9 +642,12 @@ export default function AdminPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/accounts/${accountId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
@@ -691,11 +699,11 @@ export default function AdminPage() {
                 key={classroom.id}
                 className="rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10"
               >
-                      <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
-                        <div>
-                          <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
-                            {classroom.name}
-                          </h2>
+                <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+                      {classroom.name}
+                    </h2>
                     <p className="text-sm text-default-600 dark:text-default-400">
                       Bahasa pemrograman:{" "}
                       <span className="font-medium text-default-800 dark:text-default-200">
@@ -703,7 +711,10 @@ export default function AdminPage() {
                       </span>
                     </p>
                     <p className="text-xs text-default-500 dark:text-default-400">
-                      Status bahasa: {classroom.languageLocked ? "Terkunci untuk user" : "User dapat mengubah bahasa"}
+                      Status bahasa:{" "}
+                      {classroom.languageLocked
+                        ? "Terkunci untuk user"
+                        : "User dapat mengubah bahasa"}
                     </p>
                   </div>
                   <div className="flex flex-col items-start gap-2 text-xs text-default-500 dark:text-default-400 md:items-end">
@@ -740,7 +751,10 @@ export default function AdminPage() {
                         </>
                       ) : (
                         <>
-                          <Button variant="flat" onPress={() => beginEditClassroom(classroom)}>
+                          <Button
+                            variant="flat"
+                            onPress={() => beginEditClassroom(classroom)}
+                          >
                             Ubah
                           </Button>
                           <Button
@@ -834,21 +848,33 @@ export default function AdminPage() {
                               <th className="px-3 py-2 font-semibold">Nama</th>
                               <th className="px-3 py-2 font-semibold">NPM</th>
                               <th className="px-3 py-2 font-semibold">Kode</th>
-                              <th className="px-3 py-2 font-semibold">Terdaftar</th>
-                              <th className="px-3 py-2 font-semibold">Pembaruan</th>
-                              <th className="px-3 py-2 text-right font-semibold">Aksi</th>
+                              <th className="px-3 py-2 font-semibold">
+                                Terdaftar
+                              </th>
+                              <th className="px-3 py-2 font-semibold">
+                                Pembaruan
+                              </th>
+                              <th className="px-3 py-2 text-right font-semibold">
+                                Aksi
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-default-200 dark:divide-default-100/20">
                             {classroom.users.map((user) => (
-                              <tr key={user.id} className="bg-default-50 dark:bg-transparent">
+                              <tr
+                                key={user.id}
+                                className="bg-default-50 dark:bg-transparent"
+                              >
                                 <td className="px-3 py-2 font-medium text-default-800 dark:text-default-200">
                                   <div className="space-y-2">
                                     <input
                                       className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
                                       value={userNameInputs[user.id] ?? ""}
                                       onChange={(event) =>
-                                        handleChangeUserName(user.id, event.target.value)
+                                        handleChangeUserName(
+                                          user.id,
+                                          event.target.value,
+                                        )
                                       }
                                       disabled={userNameSaving[user.id]}
                                     />
@@ -868,7 +894,9 @@ export default function AdminPage() {
                                     color="secondary"
                                     size="sm"
                                     variant="flat"
-                                    onPress={() => handlePreviewUserCode(user.code)}
+                                    onPress={() =>
+                                      handlePreviewUserCode(user.code)
+                                    }
                                   >
                                     {user.code || "Lihat Kode"}
                                   </Button>
@@ -885,7 +913,9 @@ export default function AdminPage() {
                                     size="sm"
                                     variant="flat"
                                     isLoading={userNameSaving[user.id]}
-                                    onPress={() => handleSaveUserName(classroom.id, user.id)}
+                                    onPress={() =>
+                                      handleSaveUserName(classroom.id, user.id)
+                                    }
                                   >
                                     Simpan Nama
                                   </Button>
@@ -906,9 +936,14 @@ export default function AdminPage() {
                           placeholder="Nama user"
                           value={classroomUserForms[classroom.id]?.name ?? ""}
                           onChange={(event) => {
-                            updateClassroomUserForm(classroom.id, { name: event.target.value });
+                            updateClassroomUserForm(classroom.id, {
+                              name: event.target.value,
+                            });
                             if (classroomUserErrors[classroom.id]) {
-                              setClassroomUserErrors((prev) => ({ ...prev, [classroom.id]: null }));
+                              setClassroomUserErrors((prev) => ({
+                                ...prev,
+                                [classroom.id]: null,
+                              }));
                             }
                           }}
                           disabled={classroomUserLoading[classroom.id]}
@@ -918,9 +953,14 @@ export default function AdminPage() {
                           placeholder="NPM"
                           value={classroomUserForms[classroom.id]?.npm ?? ""}
                           onChange={(event) => {
-                            updateClassroomUserForm(classroom.id, { npm: event.target.value });
+                            updateClassroomUserForm(classroom.id, {
+                              npm: event.target.value,
+                            });
                             if (classroomUserErrors[classroom.id]) {
-                              setClassroomUserErrors((prev) => ({ ...prev, [classroom.id]: null }));
+                              setClassroomUserErrors((prev) => ({
+                                ...prev,
+                                [classroom.id]: null,
+                              }));
                             }
                           }}
                           disabled={classroomUserLoading[classroom.id]}
@@ -930,9 +970,14 @@ export default function AdminPage() {
                           placeholder="Kode unik"
                           value={classroomUserForms[classroom.id]?.code ?? ""}
                           onChange={(event) => {
-                            updateClassroomUserForm(classroom.id, { code: event.target.value });
+                            updateClassroomUserForm(classroom.id, {
+                              code: event.target.value,
+                            });
                             if (classroomUserErrors[classroom.id]) {
-                              setClassroomUserErrors((prev) => ({ ...prev, [classroom.id]: null }));
+                              setClassroomUserErrors((prev) => ({
+                                ...prev,
+                                [classroom.id]: null,
+                              }));
                             }
                           }}
                           disabled={classroomUserLoading[classroom.id]}
@@ -945,7 +990,8 @@ export default function AdminPage() {
                           </p>
                         ) : (
                           <span className="text-xs text-default-500 dark:text-default-400">
-                            Gunakan kode unik untuk mengidentifikasi user di classroom.
+                            Gunakan kode unik untuk mengidentifikasi user di
+                            classroom.
                           </span>
                         )}
                         <Button
@@ -971,7 +1017,9 @@ export default function AdminPage() {
       <section className="space-y-4 rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">Manajemen Classroom</h2>
+            <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+              Manajemen Classroom
+            </h2>
             <p className="text-sm text-default-600 dark:text-default-400">
               Kelola data classroom beserta bahasa pemrograman yang digunakan.
             </p>
@@ -987,7 +1035,9 @@ export default function AdminPage() {
         </div>
 
         <div className="rounded-2xl border border-default-200 bg-default-100/40 p-5 dark:border-default-100/40 dark:bg-default-100/10">
-          <h3 className="text-sm font-semibold text-default-700 dark:text-default-200">Tambah Classroom</h3>
+          <h3 className="text-sm font-semibold text-default-700 dark:text-default-200">
+            Tambah Classroom
+          </h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <input
               className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
@@ -1020,7 +1070,9 @@ export default function AdminPage() {
                 type="checkbox"
                 className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
                 checked={newClassroomLockLanguage}
-                onChange={(event) => setNewClassroomLockLanguage(event.target.checked)}
+                onChange={(event) =>
+                  setNewClassroomLockLanguage(event.target.checked)
+                }
                 disabled={isCreatingClassroom}
               />
               Kunci bahasa pemrograman untuk user
@@ -1035,7 +1087,9 @@ export default function AdminPage() {
             </Button>
           </div>
           {classroomFormError ? (
-            <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">{classroomFormError}</p>
+            <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">
+              {classroomFormError}
+            </p>
           ) : null}
         </div>
 
@@ -1064,10 +1118,16 @@ export default function AdminPage() {
             Manajemen Akun
           </h2>
           <p className="text-sm text-default-600 dark:text-default-400">
-            Kelola akun yang dapat mengakses sistem, termasuk promosi menjadi admin.
+            Kelola akun yang dapat mengakses sistem, termasuk promosi menjadi
+            admin.
           </p>
         </div>
-        <Button color="secondary" variant="solid" onPress={fetchAccounts} isLoading={isAccountsLoading}>
+        <Button
+          color="secondary"
+          variant="solid"
+          onPress={fetchAccounts}
+          isLoading={isAccountsLoading}
+        >
           Muat Ulang Akun
         </Button>
       </div>
@@ -1087,7 +1147,9 @@ export default function AdminPage() {
           <select
             className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200 md:w-40"
             value={newAccountRole}
-            onChange={(event) => setNewAccountRole(event.target.value as ApiAccount["role"])}
+            onChange={(event) =>
+              setNewAccountRole(event.target.value as ApiAccount["role"])
+            }
             disabled={isSavingAccount}
           >
             <option value="user">User</option>
@@ -1103,7 +1165,9 @@ export default function AdminPage() {
           </Button>
         </div>
         {accountFormError ? (
-          <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">{accountFormError}</p>
+          <p className="mt-2 text-sm text-danger-500 dark:text-danger-300">
+            {accountFormError}
+          </p>
         ) : null}
       </div>
 
@@ -1144,7 +1208,10 @@ export default function AdminPage() {
                       className="rounded-xl border border-default-200 bg-default-50 px-3 py-1 text-sm dark:border-default-100/40 dark:bg-default-50/10"
                       value={item.role}
                       onChange={(event) =>
-                        handleUpdateRole(item.id, event.target.value as ApiAccount["role"])
+                        handleUpdateRole(
+                          item.id,
+                          event.target.value as ApiAccount["role"],
+                        )
                       }
                     >
                       <option value="user">{roleLabel.user}</option>
@@ -1200,7 +1267,8 @@ export default function AdminPage() {
             Daftarkan Admin Pertama
           </h2>
           <p className="mt-2 text-sm text-default-600 dark:text-default-400">
-            Masukkan NPM untuk mendaftarkan admin pertama. Setelah berhasil, Anda akan otomatis masuk sebagai admin.
+            Masukkan NPM untuk mendaftarkan admin pertama. Setelah berhasil,
+            Anda akan otomatis masuk sebagai admin.
           </p>
 
           <div className="mt-6 space-y-3">
@@ -1212,7 +1280,9 @@ export default function AdminPage() {
               disabled={isRegisteringAdmin}
             />
             {firstAdminError ? (
-              <p className="text-sm text-danger-500 dark:text-danger-300">{firstAdminError}</p>
+              <p className="text-sm text-danger-500 dark:text-danger-300">
+                {firstAdminError}
+              </p>
             ) : null}
             <Button
               color="primary"
@@ -1236,7 +1306,11 @@ export default function AdminPage() {
           <p className="text-sm text-default-600 dark:text-default-400">
             Admin sudah terdaftar. Silakan login menggunakan akun admin Anda.
           </p>
-          <Button color="primary" variant="solid" onPress={() => navigate("/login?redirect=/admin")}>
+          <Button
+            color="primary"
+            variant="solid"
+            onPress={() => navigate("/login?redirect=/admin")}
+          >
             Buka Halaman Login
           </Button>
         </div>
@@ -1248,8 +1322,10 @@ export default function AdminPage() {
         <div className="mx-auto max-w-lg space-y-4 rounded-3xl border border-warning-300 bg-warning-50 px-8 py-12 text-center shadow-xl dark:border-warning-200/40 dark:bg-warning-500/10 dark:text-warning-200">
           <h2 className="text-2xl font-semibold">Akses Terbatas</h2>
           <p className="text-sm">
-            Anda masuk sebagai <strong className="font-semibold">{account.npm}</strong> dengan role{" "}
-            <strong className="font-semibold">{roleLabel[account.role]}</strong>. Hubungi admin untuk meminta akses.
+            Anda masuk sebagai{" "}
+            <strong className="font-semibold">{account.npm}</strong> dengan role{" "}
+            <strong className="font-semibold">{roleLabel[account.role]}</strong>
+            . Hubungi admin untuk meminta akses.
           </p>
           <Button color="primary" variant="solid" onPress={() => navigate("/")}>
             Kembali ke Beranda
@@ -1281,91 +1357,22 @@ export default function AdminPage() {
 
         {renderAccounts()}
         {renderClassrooms()}
-        {renderApiDocs()}
       </div>
     );
   };
 
   const groupedEndpoints = useMemo(() => {
-    return apiEndpoints.reduce<Record<string, ApiEndpoint[]>>((accumulator, endpoint) => {
-      if (!accumulator[endpoint.tag]) {
-        accumulator[endpoint.tag] = [];
-      }
-      accumulator[endpoint.tag].push(endpoint);
-      return accumulator;
-    }, {});
+    return apiEndpoints.reduce<Record<string, ApiEndpoint[]>>(
+      (accumulator, endpoint) => {
+        if (!accumulator[endpoint.tag]) {
+          accumulator[endpoint.tag] = [];
+        }
+        accumulator[endpoint.tag].push(endpoint);
+        return accumulator;
+      },
+      {},
+    );
   }, [apiEndpoints]);
-
-  const renderApiDocs = () => (
-    <section className="space-y-4 rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
-            Dokumentasi API
-          </h2>
-          <p className="text-sm text-default-600 dark:text-default-400">
-            Sumber endpoint diambil dari dokumen OpenAPI bawaan aplikasi.
-          </p>
-        </div>
-        <Button color="secondary" variant="flat" onPress={fetchApiDocs} isLoading={isApiDocsLoading}>
-          Muat Ulang Dokumentasi
-        </Button>
-      </div>
-
-      {apiDocsError ? (
-        <div className="rounded-2xl border border-danger-300 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-200/40 dark:bg-danger-500/10 dark:text-danger-200">
-          {apiDocsError}
-        </div>
-      ) : null}
-
-      {isApiDocsLoading ? (
-        <div className="rounded-2xl border border-default-200 bg-default-100 px-4 py-6 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
-          Memuat dokumentasi API...
-        </div>
-      ) : apiEndpoints.length === 0 ? (
-        <div className="rounded-2xl border border-default-200 bg-default-100 px-4 py-6 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-400">
-          Tidak ada endpoint yang tersedia dalam dokumen OpenAPI.
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedEndpoints).map(([tag, endpoints]) => (
-            <div key={tag} className="space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-400">
-                {tag}
-              </h3>
-              <div className="space-y-3">
-                {endpoints.map((endpoint) => (
-                  <div
-                    key={`${endpoint.method}-${endpoint.path}-${endpoint.summary}`}
-                    className="rounded-2xl border border-default-200 bg-default-50 p-4 dark:border-default-100/40 dark:bg-default-50/10"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
-                          {endpoint.method}
-                        </span>
-                        <code className="font-code text-sm text-default-800 dark:text-default-100">
-                          {endpoint.path}
-                        </code>
-                      </div>
-                      <span className="text-xs text-default-500 dark:text-default-400">
-                        {endpoint.summary}
-                      </span>
-                    </div>
-                    {endpoint.description ? (
-                      <p className="mt-2 text-sm text-default-600 dark:text-default-400">
-                        {endpoint.description}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
 
   return (
     <DefaultLayout>
