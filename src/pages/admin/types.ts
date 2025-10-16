@@ -14,6 +14,7 @@ export type ApiClassroom = {
   name: string;
   programmingLanguage: string | null;
   languageLocked: boolean;
+  tasks: string[];
   users: ApiUser[];
   createdAt: string;
   updatedAt: string;

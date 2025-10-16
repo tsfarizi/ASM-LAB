@@ -117,6 +117,44 @@ export const IndexPage = () => {
     return classroom?.programmingLanguage ?? null;
   }, [classroom?.programmingLanguage, lockedLanguage]);
 
+  const matchesClassroomLanguage = useMemo(() => {
+    if (!classroom) {
+      return false;
+    }
+
+    if (!classroom.programmingLanguage) {
+      return true;
+    }
+
+    const normalized = classroom.programmingLanguage.trim().toLowerCase();
+    const candidates = [
+      activeLanguage.name,
+      activeLanguage.labLabel,
+      activeLanguage.shortName,
+    ]
+      .map((label) => label.trim().toLowerCase())
+      .filter((label) => label.length > 0);
+
+    return candidates.includes(normalized);
+  }, [
+    classroom,
+    activeLanguage.name,
+    activeLanguage.labLabel,
+    activeLanguage.shortName,
+  ]);
+
+  const classroomTasks = useMemo(() => {
+    if (!classroom?.tasks || classroom.tasks.length === 0) {
+      return [] as string[];
+    }
+
+    if (!matchesClassroomLanguage) {
+      return [] as string[];
+    }
+
+    return classroom.tasks;
+  }, [classroom?.tasks, matchesClassroomLanguage]);
+
   const lineNumbers = useMemo(() => {
     const totalLines = code.split("\n").length;
     return Array.from({ length: Math.max(totalLines, 1) }, (_, index) => index + 1);
@@ -272,10 +310,13 @@ export const IndexPage = () => {
     [code, codeStorageKey, isPreviewMode],
   );
 
-  const instructions = useMemo(
-    () => resolveInstructions(activeLanguage.name, activeLanguage.shortName),
-    [activeLanguage.name, activeLanguage.shortName],
-  );
+  const instructions = useMemo(() => {
+    if (classroomTasks.length > 0) {
+      return classroomTasks;
+    }
+
+    return resolveInstructions(activeLanguage.name, activeLanguage.shortName);
+  }, [activeLanguage.name, activeLanguage.shortName, classroomTasks]);
 
   const handleRun = useCallback(async () => {
     const trimmed = code.trim();
@@ -362,16 +403,21 @@ export const IndexPage = () => {
         });
       }
 
+      const submissionPayload: Record<string, unknown> = {
+        source_code: trimmed,
+        language_id: activeLanguage.id,
+      };
+
+      if (account?.role !== "admin") {
+        submissionPayload.npm = classroom?.user?.npm || account?.npm || "";
+      }
+
       const response = await fetch(SUBMISSION_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          source_code: trimmed,
-          language_id: activeLanguage.id,
-          npm: classroom?.user?.npm || account?.npm || "",
-        }),
+        body: JSON.stringify(submissionPayload),
       });
 
       if (!response.ok) {
@@ -472,7 +518,12 @@ export const IndexPage = () => {
         </div>
         <aside className="flex h-full flex-col gap-5 lg:h-[680px]">
           <div className="flex flex-1 flex-col gap-5 overflow-hidden">
-            <InstructionsPanel instructions={instructions} labLabel={activeLanguage.labLabel} />
+            <InstructionsPanel
+              classroomName={classroom?.name}
+              instructions={instructions}
+              isClassroomTasks={classroomTasks.length > 0}
+              labLabel={activeLanguage.labLabel}
+            />
             <OutputPanel output={output} />
           </div>
           <ActionButtons

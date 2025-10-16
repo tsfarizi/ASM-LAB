@@ -48,6 +48,7 @@ export const AdminPage = () => {
   const [newClassroomName, setNewClassroomName] = useState("");
   const [newClassroomLanguageId, setNewClassroomLanguageId] = useState<number | null>(null);
   const [newClassroomLockLanguage, setNewClassroomLockLanguage] = useState(false);
+  const [newClassroomTasks, setNewClassroomTasks] = useState<string[]>([""]);
   const [classroomFormError, setClassroomFormError] = useState<string | null>(null);
   const [classroomActionError, setClassroomActionError] = useState<string | null>(null);
   const [isCreatingClassroom, setIsCreatingClassroom] = useState(false);
@@ -55,6 +56,7 @@ export const AdminPage = () => {
   const [editingName, setEditingName] = useState("");
   const [editingLanguageId, setEditingLanguageId] = useState<number | null>(null);
   const [editingLockLanguage, setEditingLockLanguage] = useState(false);
+  const [editingTasks, setEditingTasks] = useState<string[]>([]);
   const [editingError, setEditingError] = useState<string | null>(null);
   const [isSavingClassroom, setIsSavingClassroom] = useState(false);
   const [deletingClassroomId, setDeletingClassroomId] = useState<number | null>(null);
@@ -144,9 +146,18 @@ export const AdminPage = () => {
       }
 
       const data: ApiClassroom[] = await response.json();
-      setClassrooms(data);
+      const normalizedClassrooms = data.map((classroom) => {
+        const rawTasks = Array.isArray(classroom.tasks) ? classroom.tasks : [];
+        return {
+          ...classroom,
+          tasks: rawTasks
+            .map((task) => task.trim())
+            .filter((task) => task.length > 0),
+        };
+      });
+      setClassrooms(normalizedClassrooms);
       setManagedUserForms(
-        data.reduce<ManagedUserState>((accumulator, classroom) => {
+        normalizedClassrooms.reduce<ManagedUserState>((accumulator, classroom) => {
           classroom.users.forEach((user) => {
             accumulator[user.id] = { name: user.name, npm: user.npm };
           });
@@ -155,7 +166,7 @@ export const AdminPage = () => {
       );
       const collectValidIds = () => {
         const validIds = new Set<number>();
-        data.forEach((classroom) => {
+        normalizedClassrooms.forEach((classroom) => {
           classroom.users.forEach((user) => {
             validIds.add(user.id);
           });
@@ -261,6 +272,14 @@ export const AdminPage = () => {
       payload.programmingLanguage = selectedLanguage.name;
     }
 
+    const trimmedTasks = newClassroomTasks
+      .map((task) => task.trim())
+      .filter((task) => task.length > 0);
+
+    if (trimmedTasks.length > 0) {
+      payload.tasks = trimmedTasks;
+    }
+
     setClassroomFormError(null);
     setClassroomActionError(null);
     setEditingError(null);
@@ -281,6 +300,7 @@ export const AdminPage = () => {
       setNewClassroomName("");
       setNewClassroomLanguageId(null);
       setNewClassroomLockLanguage(false);
+      setNewClassroomTasks([""]);
       await fetchClassrooms();
     } catch (error) {
       setClassroomActionError(
@@ -299,6 +319,7 @@ export const AdminPage = () => {
     const matchedLanguage = findLanguageByName(classroom.programmingLanguage);
     setEditingLanguageId(matchedLanguage?.id ?? null);
     setEditingLockLanguage(matchedLanguage ? classroom.languageLocked : false);
+    setEditingTasks(classroom.tasks.length > 0 ? [...classroom.tasks] : [""]);
   };
 
   const handleCancelEditClassroom = () => {
@@ -309,6 +330,7 @@ export const AdminPage = () => {
     setEditingName("");
     setEditingLanguageId(null);
     setEditingLockLanguage(false);
+    setEditingTasks([]);
     setClassroomActionError(null);
     setEditingError(null);
   };
@@ -330,6 +352,9 @@ export const AdminPage = () => {
       name: trimmedName,
       programmingLanguage: selectedLanguage ? selectedLanguage.name : null,
       lockLanguage: selectedLanguage ? editingLockLanguage : false,
+      tasks: editingTasks
+        .map((task) => task.trim())
+        .filter((task) => task.length > 0),
     };
 
     setClassroomActionError(null);
@@ -390,6 +415,38 @@ export const AdminPage = () => {
     } finally {
       setDeletingClassroomId(null);
     }
+  };
+
+  const handleChangeNewClassroomTask = (index: number, value: string) => {
+    setNewClassroomTasks((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const handleAddNewClassroomTask = () => {
+    setNewClassroomTasks((prev) => [...prev, ""]);
+  };
+
+  const handleRemoveNewClassroomTask = (index: number) => {
+    setNewClassroomTasks((prev) => prev.filter((_, taskIndex) => taskIndex !== index));
+  };
+
+  const handleChangeEditingTask = (index: number, value: string) => {
+    setEditingTasks((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const handleAddEditingTask = () => {
+    setEditingTasks((prev) => [...prev, ""]);
+  };
+
+  const handleRemoveEditingTask = (index: number) => {
+    setEditingTasks((prev) => prev.filter((_, taskIndex) => taskIndex !== index));
   };
 
   const handleRegisterFirstAdmin = async () => {
@@ -818,6 +875,7 @@ export const AdminPage = () => {
           editingLanguageId={editingLanguageId}
           editingLockLanguage={editingLockLanguage}
           editingName={editingName}
+          editingTasks={editingTasks}
           isCreatingClassroom={isCreatingClassroom}
           isLoading={isClassroomLoading}
           isRefreshing={isRefreshing}
@@ -829,21 +887,28 @@ export const AdminPage = () => {
           newClassroomLanguageId={newClassroomLanguageId}
           newClassroomLockLanguage={newClassroomLockLanguage}
           newClassroomName={newClassroomName}
+          newClassroomTasks={newClassroomTasks}
           onAddUserToClassroom={handleAddUserToClassroom}
+          onAddEditingTask={handleAddEditingTask}
+          onAddNewClassroomTask={handleAddNewClassroomTask}
           onCancelEditClassroom={handleCancelEditClassroom}
           onChangeClassroomUserForm={updateClassroomUserForm}
           onChangeEditingLanguage={handleChangeEditingLanguage}
           onChangeEditingName={handleChangeEditingName}
+          onChangeEditingTask={handleChangeEditingTask}
           onChangeManagedUserForm={handleChangeManagedUserForm}
           onChangeNewClassroomLanguage={handleChangeNewClassroomLanguage}
           onChangeNewClassroomName={handleChangeNewClassroomName}
+          onChangeNewClassroomTask={handleChangeNewClassroomTask}
           onCreateClassroom={handleCreateClassroom}
           onDeleteClassroom={handleDeleteClassroom}
+          onRemoveEditingTask={handleRemoveEditingTask}
           onDeleteManagedUser={handleDeleteManagedUser}
           onEditClassroom={handleBeginEditClassroom}
           onPreviewUserCode={handlePreviewUserCode}
           onRefresh={handleRefreshClassrooms}
           onSaveManagedUser={handleSaveManagedUser}
+          onRemoveNewClassroomTask={handleRemoveNewClassroomTask}
           onToggleEditingLockLanguage={handleToggleEditingLockLanguage}
           onToggleNewClassroomLock={handleToggleNewClassroomLock}
           onUpdateClassroom={handleUpdateClassroom}

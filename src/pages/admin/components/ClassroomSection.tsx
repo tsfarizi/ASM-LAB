@@ -14,6 +14,7 @@ type ClassroomSectionProps = {
   newClassroomName: string;
   newClassroomLanguageId: number | null;
   newClassroomLockLanguage: boolean;
+  newClassroomTasks: string[];
   classroomFormError: string | null;
   classroomActionError: string | null;
   classroomError: string | null;
@@ -22,6 +23,7 @@ type ClassroomSectionProps = {
   editingName: string;
   editingLanguageId: number | null;
   editingLockLanguage: boolean;
+  editingTasks: string[];
   editingError: string | null;
   isSavingClassroom: boolean;
   deletingClassroomId: number | null;
@@ -44,6 +46,12 @@ type ClassroomSectionProps = {
   onChangeEditingName: (value: string) => void;
   onChangeEditingLanguage: (value: number | null) => void;
   onToggleEditingLockLanguage: (value: boolean) => void;
+  onChangeNewClassroomTask: (index: number, value: string) => void;
+  onAddNewClassroomTask: () => void;
+  onRemoveNewClassroomTask: (index: number) => void;
+  onChangeEditingTask: (index: number, value: string) => void;
+  onAddEditingTask: () => void;
+  onRemoveEditingTask: (index: number) => void;
   onAddUserToClassroom: (classroomId: number) => void;
   onChangeClassroomUserForm: (
     classroomId: number,
@@ -67,6 +75,7 @@ export const ClassroomSection = ({
   newClassroomName,
   newClassroomLanguageId,
   newClassroomLockLanguage,
+  newClassroomTasks,
   classroomFormError,
   classroomActionError,
   classroomError,
@@ -75,6 +84,7 @@ export const ClassroomSection = ({
   editingName,
   editingLanguageId,
   editingLockLanguage,
+  editingTasks,
   editingError,
   isSavingClassroom,
   deletingClassroomId,
@@ -97,6 +107,12 @@ export const ClassroomSection = ({
   onChangeEditingName,
   onChangeEditingLanguage,
   onToggleEditingLockLanguage,
+  onChangeNewClassroomTask,
+  onAddNewClassroomTask,
+  onRemoveNewClassroomTask,
+  onChangeEditingTask,
+  onAddEditingTask,
+  onRemoveEditingTask,
   onAddUserToClassroom,
   onChangeClassroomUserForm,
   onChangeManagedUserForm,
@@ -149,6 +165,73 @@ export const ClassroomSection = ({
         </optgroup>
       ) : null}
     </select>
+  );
+
+  const renderTaskEditor = (
+    idPrefix: string,
+    tasks: string[],
+    {
+      disabled,
+      onAdd,
+      onChange,
+      onRemove,
+    }: {
+      disabled: boolean;
+      onAdd: () => void;
+      onChange: (index: number, value: string) => void;
+      onRemove: (index: number) => void;
+    },
+  ) => (
+    <div className="space-y-3">
+      {tasks.length === 0 ? (
+        <p className="rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-50/15 dark:text-default-300">
+          Belum ada tugas yang ditambahkan.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {tasks.map((task, index) => {
+            const inputId = `${idPrefix}-${index}`;
+            return (
+              <div
+                key={inputId}
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              >
+                <input
+                  className="w-full flex-1 rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                  disabled={disabled}
+                  id={inputId}
+                  placeholder={`Tugas ke-${index + 1}`}
+                  value={task}
+                  onChange={(event) => onChange(index, event.target.value)}
+                />
+                <Button
+                  className="sm:w-auto"
+                  color="danger"
+                  isDisabled={disabled}
+                  size="sm"
+                  variant="light"
+                  onPress={() => onRemove(index)}
+                >
+                  Hapus
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-default-500 dark:text-default-300">
+        <Button
+          color="primary"
+          isDisabled={disabled}
+          size="sm"
+          variant="flat"
+          onPress={onAdd}
+        >
+          Tambah Baris Tugas
+        </Button>
+        <span>Setiap baris mewakili satu tugas.</span>
+      </div>
+    </div>
   );
 
   const renderClassroomList = () => {
@@ -332,6 +415,44 @@ export const ClassroomSection = ({
                         {editingError}
                       </div>
                     ) : null}
+                    <div className="space-y-3 rounded-2xl border border-default-200 bg-default-100/50 p-4 dark:border-default-100/40 dark:bg-default-100/10">
+                      <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+                        Daftar Tugas Classroom
+                      </h4>
+                      {renderTaskEditor(`editing-task-${classroom.id}`, editingTasks, {
+                        disabled: isSavingClassroom,
+                        onAdd: onAddEditingTask,
+                        onChange: onChangeEditingTask,
+                        onRemove: onRemoveEditingTask,
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
+                {!isEditing ? (
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-200">
+                      Daftar Tugas ({classroom.tasks.length})
+                    </h3>
+                    {classroom.tasks.length === 0 ? (
+                      <p className="mt-3 rounded-2xl border border-default-200 bg-default-100 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
+                        Belum ada tugas yang ditetapkan untuk classroom ini.
+                      </p>
+                    ) : (
+                      <ol className="mt-3 space-y-2 text-sm text-default-700 dark:text-default-200">
+                        {classroom.tasks.map((task, index) => (
+                          <li
+                            key={`${classroom.id}-task-${index}`}
+                            className="flex gap-3 rounded-2xl border border-default-200 bg-default-50 px-4 py-3 dark:border-default-100/40 dark:bg-default-50/10"
+                          >
+                            <span className="mt-0.5 text-xs font-semibold text-default-400 dark:text-default-500">
+                              {index + 1}.
+                            </span>
+                            <span>{task}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
                   </div>
                 ) : null}
 
@@ -605,6 +726,17 @@ export const ClassroomSection = ({
               memilih sendiri.
             </p>
           </div>
+        </div>
+        <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/60 p-4 dark:border-default-100/40 dark:bg-default-100/10">
+          <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+            Daftar Tugas Classroom
+          </h4>
+          {renderTaskEditor("new-classroom-task", newClassroomTasks, {
+            disabled: isCreatingClassroom,
+            onAdd: onAddNewClassroomTask,
+            onChange: onChangeNewClassroomTask,
+            onRemove: onRemoveNewClassroomTask,
+          })}
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <label

@@ -36,6 +36,7 @@ export type ClassroomInfo = {
   name: string;
   programmingLanguage: string | null;
   languageLocked: boolean;
+  tasks: string[];
   createdAt?: string;
   updatedAt?: string;
   user: ClassroomUser | null;
@@ -95,6 +96,10 @@ const normalizeClassroom = (value: unknown): ClassroomInfo | null => {
     typeof value.programmingLanguage === "string"
       ? value.programmingLanguage
       : null;
+  const rawTasks = Array.isArray(value.tasks)
+    ? value.tasks.filter((task): task is string => typeof task === "string")
+    : [];
+  const tasks = rawTasks.map((task) => task.trim()).filter((task) => task.length > 0);
 
   const userValue = value.user;
   let user: ClassroomInfo["user"] = null;
@@ -119,6 +124,7 @@ const normalizeClassroom = (value: unknown): ClassroomInfo | null => {
     name: typeof value.name === "string" ? value.name : String(id),
     programmingLanguage,
     languageLocked,
+    tasks,
     createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
     user,
