@@ -27,6 +27,14 @@ type ApiClassroom = {
 
 type ApiAccount = AuthAccount;
 
+type ApiEndpoint = {
+  method: string;
+  path: string;
+  summary: string;
+  description: string;
+  tag: string;
+};
+
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString("id-ID", {
     dateStyle: "medium",
@@ -39,7 +47,6 @@ const roleLabel: Record<ApiAccount["role"], string> = {
 };
 
 export default function AdminPage() {
-  void apiEndpoints;
   const navigate = useNavigate();
   const { account, login, logout, syncAccount, isLoading: authLoading } = useAuth();
   const accountRef = useRef<AuthAccount | null>(account);
@@ -87,6 +94,10 @@ export default function AdminPage() {
   const [userNameInputs, setUserNameInputs] = useState<Record<number, string>>({});
   const [userNameErrors, setUserNameErrors] = useState<Record<number, string | null>>({});
   const [userNameSaving, setUserNameSaving] = useState<Record<number, boolean>>({});
+
+  const [apiEndpoints, setApiEndpoints] = useState<ApiEndpoint[]>([]);
+  const [isApiDocsLoading, setIsApiDocsLoading] = useState(false);
+  const [apiDocsError, setApiDocsError] = useState<string | null>(null);
 
   useEffect(() => {
     accountRef.current = account ?? null;
