@@ -45,8 +45,12 @@ export const IndexPage = () => {
     [activeLanguage.id],
   );
 
-  const [code, setCode] = useState("");
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const previewState = (location.state as PreviewState) ?? null;
+  const hasPreviewState = previewState !== null && Object.prototype.hasOwnProperty.call(previewState, PREVIEW_STATE_KEY);
+  const previewCode = hasPreviewState ? previewState?.[PREVIEW_STATE_KEY] ?? "" : "";
+
+  const [code, setCode] = useState(() => (hasPreviewState ? previewCode : ""));
+  const [isPreviewMode, setIsPreviewMode] = useState(hasPreviewState);
   const [highlightedCode, setHighlightedCode] = useState("&nbsp;");
   const [isRunning, setIsRunning] = useState(false);
   const defaultOutput = useMemo(
@@ -58,14 +62,20 @@ export const IndexPage = () => {
   useEffect(() => {
     const state = location.state as PreviewState;
 
-    if (state?.[PREVIEW_STATE_KEY] !== undefined) {
-      const nextCode = state[PREVIEW_STATE_KEY] ?? "";
+    if (hasPreviewState) {
       setIsPreviewMode(true);
-      setCode(nextCode);
+      setCode(previewCode);
       setOutput(defaultOutput);
       navigate(location.pathname + location.search, { replace: true, state: null });
     }
-  }, [defaultOutput, location.pathname, location.search, location.state, navigate]);
+  }, [
+    defaultOutput,
+    hasPreviewState,
+    location.pathname,
+    location.search,
+    navigate,
+    previewCode,
+  ]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightContainerRef = useRef<HTMLDivElement>(null);
