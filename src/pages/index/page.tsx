@@ -20,6 +20,7 @@ import { LanguageCard } from "./components/LanguageCard";
 import { OutputPanel } from "./components/OutputPanel";
 import { PreviewBanner } from "./components/PreviewBanner";
 import {
+  getClassroomEndpoint,
   getCodeStorageKey,
   getUserCodeEndpoint,
   isBrowser,
@@ -59,6 +60,8 @@ export const IndexPage = () => {
     [activeLanguage.labLabel],
   );
   const [output, setOutput] = useState(defaultOutput);
+  const [fetchedClassroomTasks, setFetchedClassroomTasks] = useState<string[]>([]);
+  const [hasLoadedClassroomTasks, setHasLoadedClassroomTasks] = useState(false);
 
   useEffect(() => {
     if (hasPreviewState) {
@@ -84,6 +87,61 @@ export const IndexPage = () => {
   useEffect(() => {
     setOutput(defaultOutput);
   }, [defaultOutput]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!classroom?.id) {
+      setFetchedClassroomTasks([]);
+      setHasLoadedClassroomTasks(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setHasLoadedClassroomTasks(false);
+
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch(getClassroomEndpoint(classroom.id));
+        if (!response.ok) {
+          throw new Error(`Failed to fetch classroom tasks (${response.status})`);
+        }
+
+        const payload = await response.json().catch(() => null);
+
+        let rawTasks: unknown[] = [];
+        if (payload && typeof payload === "object") {
+          const tasksValue = (payload as { tasks?: unknown }).tasks;
+          if (Array.isArray(tasksValue)) {
+            rawTasks = tasksValue;
+          }
+        }
+
+        const tasks = rawTasks
+          .filter((task): task is string => typeof task === "string")
+          .map((task) => task.trim())
+          .filter((task) => task.length > 0);
+
+        if (!cancelled) {
+          setFetchedClassroomTasks(tasks);
+          setHasLoadedClassroomTasks(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch classroom tasks", error);
+        if (!cancelled) {
+          setFetchedClassroomTasks([]);
+          setHasLoadedClassroomTasks(true);
+        }
+      }
+    };
+
+    fetchTasks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [classroom?.id]);
 
   useEffect(() => {
     if (isPreviewMode) {
@@ -144,16 +202,12 @@ export const IndexPage = () => {
   ]);
 
   const classroomTasks = useMemo(() => {
-    if (!classroom?.tasks || classroom.tasks.length === 0) {
-      return [] as string[];
-    }
-
     if (!matchesClassroomLanguage) {
       return [] as string[];
     }
 
-    return classroom.tasks;
-  }, [classroom?.tasks, matchesClassroomLanguage]);
+    return fetchedClassroomTasks;
+  }, [fetchedClassroomTasks, matchesClassroomLanguage]);
 
   const lineNumbers = useMemo(() => {
     const totalLines = code.split("\n").length;
@@ -520,6 +574,7 @@ export const IndexPage = () => {
           <div className="flex flex-1 flex-col gap-5 overflow-hidden">
             <InstructionsPanel
               classroomName={classroom?.name}
+              classroomTasks={classroomTasks}
               instructions={instructions}
               isClassroomTasks={classroomTasks.length > 0}
               labLabel={activeLanguage.labLabel}

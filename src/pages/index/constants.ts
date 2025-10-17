@@ -9,3 +9,6 @@ export const getCodeStorageKey = (languageId: number) =>
 
 export const getUserCodeEndpoint = (classroomId: number, userId: number) =>
   `${API_BASE_URL}/api/classrooms/${classroomId}/users/${userId}`;
+
+export const getClassroomEndpoint = (classroomId: number) =>
+  `${API_BASE_URL}/api/classrooms/${classroomId}`;
