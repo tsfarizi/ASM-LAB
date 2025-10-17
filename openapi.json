@@ -733,6 +733,12 @@
             "type": "string",
             "nullable": true
           },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "updatedAt": {
             "type": "string",
             "format": "date-time"
@@ -776,6 +782,12 @@
           "programmingLanguage": {
             "type": "string",
             "nullable": true
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "users": {
             "type": "array",
@@ -908,6 +920,13 @@
           },
           "programmingLanguage": {
             "type": "string",
+            "nullable": true
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           },
           "users": {
