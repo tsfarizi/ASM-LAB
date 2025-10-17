@@ -13,7 +13,14 @@ import { AdminLoginPrompt } from "./components/AdminLoginPrompt";
 import { ClassroomSection } from "./components/ClassroomSection";
 import { FirstAdminRegistration } from "./components/FirstAdminRegistration";
 import { roleLabel } from "./utils";
-import { ApiAccount, ApiClassroom, ClassroomUserForm, ManagedUserForm } from "./types";
+import {
+  ApiAccount,
+  ApiClassroom,
+  ClassroomUserForm,
+  CreateClassroomPayload,
+  ManagedUserForm,
+  UpdateClassroomPayload,
+} from "./types";
 
 type AdminExistsResponse = {
   exists: boolean;
@@ -263,21 +270,18 @@ export const AdminPage = () => {
     const selectedLanguage =
       languages.find((language) => language.id === newClassroomLanguageId) ?? null;
 
-    const payload: Record<string, unknown> = {
-      name: trimmedName,
-      lockLanguage: selectedLanguage ? newClassroomLockLanguage : false,
-    };
-
-    if (selectedLanguage) {
-      payload.programmingLanguage = selectedLanguage.name;
-    }
-
     const trimmedTasks = newClassroomTasks
       .map((task) => task.trim())
       .filter((task) => task.length > 0);
 
-    if (trimmedTasks.length > 0) {
-      payload.tasks = trimmedTasks;
+    const payload: CreateClassroomPayload = {
+      name: trimmedName,
+      lockLanguage: selectedLanguage ? newClassroomLockLanguage : false,
+      tasks: trimmedTasks,
+    };
+
+    if (selectedLanguage) {
+      payload.programmingLanguage = selectedLanguage.name;
     }
 
     setClassroomFormError(null);
@@ -348,13 +352,15 @@ export const AdminPage = () => {
 
     const selectedLanguage =
       languages.find((language) => language.id === editingLanguageId) ?? null;
-    const payload = {
+    const trimmedTasks = editingTasks
+      .map((task) => task.trim())
+      .filter((task) => task.length > 0);
+
+    const payload: UpdateClassroomPayload = {
       name: trimmedName,
       programmingLanguage: selectedLanguage ? selectedLanguage.name : null,
       lockLanguage: selectedLanguage ? editingLockLanguage : false,
-      tasks: editingTasks
-        .map((task) => task.trim())
-        .filter((task) => task.length > 0),
+      tasks: trimmedTasks,
     };
 
     setClassroomActionError(null);

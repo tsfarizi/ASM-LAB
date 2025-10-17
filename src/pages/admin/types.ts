@@ -20,6 +20,20 @@ export type ApiClassroom = {
   updatedAt: string;
 };
 
+export type CreateClassroomPayload = {
+  name: string;
+  programmingLanguage?: string | null;
+  lockLanguage?: boolean | null;
+  tasks: string[];
+};
+
+export type UpdateClassroomPayload = {
+  name: string;
+  programmingLanguage: string | null;
+  lockLanguage: boolean | null;
+  tasks: string[];
+};
+
 export type ApiAccount = AuthAccount;
 
 export type ClassroomUserForm = {
