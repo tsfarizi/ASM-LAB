@@ -61,7 +61,7 @@ export const IndexPage = () => {
   );
   const [output, setOutput] = useState(defaultOutput);
   const [fetchedClassroomTasks, setFetchedClassroomTasks] = useState<string[]>([]);
-  const [hasLoadedClassroomTasks, setHasLoadedClassroomTasks] = useState(false);
+  const [, setHasLoadedClassroomTasks] = useState(false);
 
   useEffect(() => {
     if (hasPreviewState) {
