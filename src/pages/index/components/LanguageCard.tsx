@@ -50,7 +50,7 @@ export const LanguageCard = ({
           </label>
           <select
             aria-disabled={isLanguageLocked}
-            className="min-w-[220px] rounded-2xl border border-default-200 bg-white px-4 py-2 text-sm text-default-700 shadow-sm transition hover:border-default-300 focus:border-primary focus:outline-none dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-200"
+            className="min-w-[220px] rounded-2xl border border-default-200 bg-white px-4 py-2 text-sm text-default-700 shadow-sm transition hover:border-default-300 focus:border-primary focus:outline-none dark:border-default-100/40 dark:bg-default-900/70 dark:text-default-50 dark:hover:border-default-100 dark:focus:border-primary"
             disabled={isLanguageLocked}
             id="language-select"
             value={activeLanguage.id}
