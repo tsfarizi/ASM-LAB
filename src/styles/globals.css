@@ -13,7 +13,7 @@ body {
 }
 
 .dark body {
-  color: rgb(226 232 240);
+  color: #ffffff;
 }
 
 h1,
@@ -31,7 +31,7 @@ h6 {
 .dark h4,
 .dark h5,
 .dark h6 {
-  color: rgb(226 232 240);
+  color: #ffffff;
 }
 
 .font-code {
@@ -43,7 +43,7 @@ h6 {
 }
 
 .dark .code-editor-highlight {
-  color: rgb(229 231 235);
+  color: #ffffff;
 }
 
 .code-editor-highlight .token.comment,
@@ -117,5 +117,5 @@ h6 {
 }
 
 .dark .code-editor-textarea {
-  caret-color: rgb(226, 232, 240);
+  caret-color: #ffffff;
 }

@@ -6,7 +6,7 @@ import IndexPage from "@/pages/index";
 import LoginPage from "@/pages/login";
 
 const LoadingScreen = () => (
-  <div className="flex min-h-screen items-center justify-center bg-default-50 text-default-500 dark:bg-default-900 dark:text-default-300">
+  <div className="flex min-h-screen items-center justify-center bg-default-50 text-default-500 dark:bg-default-900 dark:text-white">
     Memuat...
   </div>
 );
