@@ -34,6 +34,8 @@ type ClassroomSectionProps = {
   managedUserErrors: Record<number, string | null>;
   managedUserSaving: Record<number, boolean>;
   managedUserDeleting: Record<number, boolean>;
+  clearingClassroomCodes: Record<number, boolean>;
+  clearClassroomCodesErrors: Record<number, string | null>;
   onRefresh: () => void;
   onCreateClassroom: () => void;
   onChangeNewClassroomName: (value: string) => void;
@@ -64,6 +66,7 @@ type ClassroomSectionProps = {
   onSaveManagedUser: (classroomId: number, userId: number) => void;
   onDeleteManagedUser: (classroomId: number, userId: number) => void;
   onPreviewUserCode: (code: string) => void;
+  onClearClassroomCodes: (classroomId: number) => void;
 };
 
 export const ClassroomSection = ({
@@ -95,6 +98,8 @@ export const ClassroomSection = ({
   managedUserErrors,
   managedUserSaving,
   managedUserDeleting,
+  clearingClassroomCodes,
+  clearClassroomCodesErrors,
   onRefresh,
   onCreateClassroom,
   onChangeNewClassroomName,
@@ -119,6 +124,7 @@ export const ClassroomSection = ({
   onSaveManagedUser,
   onDeleteManagedUser,
   onPreviewUserCode,
+  onClearClassroomCodes,
 }: ClassroomSectionProps) => {
   const allLanguages = [...availableLanguages, ...archivedLanguages];
 
@@ -269,6 +275,9 @@ export const ClassroomSection = ({
             : "Belum diatur, user bebas memilih bahasa";
           const editingNameInputId = `classroom-name-${classroom.id}`;
           const editingLockCheckboxId = `classroom-lock-${classroom.id}`;
+          const isClearingCodes = Boolean(clearingClassroomCodes[classroom.id]);
+          const clearCodesError = clearClassroomCodesErrors[classroom.id] ?? null;
+          const hasUsers = classroom.users.length > 0;
 
           return (
             <article
@@ -314,6 +323,15 @@ export const ClassroomSection = ({
                           Batal
                         </Button>
                         <Button
+                          color="warning"
+                          isDisabled={!hasUsers || isSavingClassroom}
+                          isLoading={isClearingCodes}
+                          variant="flat"
+                          onPress={() => onClearClassroomCodes(classroom.id)}
+                        >
+                          Hapus Semua Kode
+                        </Button>
+                        <Button
                           color="danger"
                           isLoading={isDeleting}
                           variant="flat"
@@ -331,6 +349,15 @@ export const ClassroomSection = ({
                           Ubah
                         </Button>
                         <Button
+                          color="warning"
+                          isDisabled={!hasUsers}
+                          isLoading={isClearingCodes}
+                          variant="flat"
+                          onPress={() => onClearClassroomCodes(classroom.id)}
+                        >
+                          Hapus Semua Kode
+                        </Button>
+                        <Button
                           color="danger"
                           isLoading={isDeleting}
                           variant="flat"
@@ -341,6 +368,16 @@ export const ClassroomSection = ({
                       </>
                     )}
                   </div>
+                  {clearCodesError ? (
+                    <p className="text-xs text-danger-500 dark:text-danger-300">
+                      {clearCodesError}
+                    </p>
+                  ) : null}
+                  {!hasUsers ? (
+                    <p className="text-xs text-default-500 dark:text-default-300">
+                      Belum ada user terdaftar.
+                    </p>
+                  ) : null}
                 </div>
               </div>
 

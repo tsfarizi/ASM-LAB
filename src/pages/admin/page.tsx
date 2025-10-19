@@ -89,6 +89,8 @@ export const AdminPage = () => {
   const [managedUserErrors, setManagedUserErrors] = useState<ManagedUserErrors>({});
   const [managedUserSaving, setManagedUserSaving] = useState<ManagedUserSaving>({});
   const [managedUserDeleting, setManagedUserDeleting] = useState<ManagedUserDeleting>({});
+  const [clearingClassroomCodes, setClearingClassroomCodes] = useState<Record<number, boolean>>({});
+  const [clearClassroomCodesErrors, setClearClassroomCodesErrors] = useState<Record<number, string | null>>({});
 
   const { languages } = useLanguage();
 
@@ -420,6 +422,68 @@ export const AdminPage = () => {
       );
     } finally {
       setDeletingClassroomId(null);
+    }
+  };
+
+  const handleClearClassroomCodes = async (classroomId: number) => {
+    const classroom = classrooms.find((item) => item.id === classroomId);
+    if (!classroom) {
+      setClearClassroomCodesErrors((prev) => ({
+        ...prev,
+        [classroomId]: "Classroom tidak ditemukan.",
+      }));
+      return;
+    }
+
+    if (classroom.users.length === 0) {
+      setClearClassroomCodesErrors((prev) => ({
+        ...prev,
+        [classroomId]: "Tidak ada user pada classroom ini.",
+      }));
+      return;
+    }
+
+    if (!window.confirm("Hapus semua kode user di classroom ini? Tindakan tidak dapat dibatalkan.")) {
+      return;
+    }
+
+    setClearClassroomCodesErrors((prev) => ({ ...prev, [classroomId]: null }));
+    setClearingClassroomCodes((prev) => ({ ...prev, [classroomId]: true }));
+
+    try {
+      for (const user of classroom.users) {
+        const response = await fetch(
+          `${API_BASE_URL}/api/classrooms/${classroomId}/users/${user.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: user.name,
+              npm: user.npm,
+              code: EMPTY_CODE_PLACEHOLDER,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(
+            payload?.message ?? `Gagal menghapus kode untuk NPM ${user.npm}.`,
+          );
+        }
+      }
+
+      await fetchClassrooms();
+    } catch (error) {
+      setClearClassroomCodesErrors((prev) => ({
+        ...prev,
+        [classroomId]:
+          error instanceof Error
+            ? error.message
+            : "Tidak dapat menghapus kode user pada classroom ini.",
+      }));
+    } finally {
+      setClearingClassroomCodes((prev) => ({ ...prev, [classroomId]: false }));
     }
   };
 
@@ -875,6 +939,8 @@ export const AdminPage = () => {
           classroomUserForms={classroomUserForms}
           classroomUserLoading={classroomUserLoading}
           classrooms={classrooms}
+          clearClassroomCodesErrors={clearClassroomCodesErrors}
+          clearingClassroomCodes={clearingClassroomCodes}
           deletingClassroomId={deletingClassroomId}
           editingClassroomId={editingClassroomId}
           editingError={editingError}
@@ -906,6 +972,7 @@ export const AdminPage = () => {
           onChangeNewClassroomLanguage={handleChangeNewClassroomLanguage}
           onChangeNewClassroomName={handleChangeNewClassroomName}
           onChangeNewClassroomTask={handleChangeNewClassroomTask}
+          onClearClassroomCodes={handleClearClassroomCodes}
           onCreateClassroom={handleCreateClassroom}
           onDeleteClassroom={handleDeleteClassroom}
           onRemoveEditingTask={handleRemoveEditingTask}

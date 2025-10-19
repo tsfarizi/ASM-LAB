@@ -43,11 +43,14 @@ export const CodeEditor = ({
     <div className="relative flex flex-1 overflow-hidden">
       <div
         ref={lineNumbersContainerRef}
-        className="relative flex w-14 select-none flex-col items-end overflow-hidden border-r border-default-200 bg-default-100 px-3 py-3 text-xs font-code text-default-500 dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-300"
+        className="relative flex w-14 select-none flex-col items-end overflow-hidden border-r border-default-200 bg-default-100 px-3 py-3 font-code text-sm tabular-nums text-default-500 dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-300"
       >
-        <div ref={lineNumbersInnerRef} className="space-y-1">
+        <div ref={lineNumbersInnerRef} className="flex flex-col">
           {lineNumbers.map((lineNumber) => (
-            <div key={`line-${lineNumber}`} className="leading-6">
+            <div
+              key={`line-${lineNumber}`}
+              className="flex h-6 items-center justify-end leading-6"
+            >
               {lineNumber}
             </div>
           ))}

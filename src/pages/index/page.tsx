@@ -27,7 +27,6 @@ import {
   SUBMISSION_ENDPOINT,
 } from "./constants";
 import { escapeHtml, withTrailingNbsp } from "./utils/highlight";
-import { resolveInstructions } from "./utils/instructions";
 
 const PREVIEW_STATE_KEY = "previewCode";
 
@@ -61,7 +60,10 @@ export const IndexPage = () => {
   );
   const [output, setOutput] = useState(defaultOutput);
   const [fetchedClassroomTasks, setFetchedClassroomTasks] = useState<string[]>([]);
-  const [, setHasLoadedClassroomTasks] = useState(false);
+  const [hasLoadedClassroomTasks, setHasLoadedClassroomTasks] = useState(false);
+  const [classroomTasksError, setClassroomTasksError] = useState<string | null>(null);
+  const [isFetchingClassroomTasks, setIsFetchingClassroomTasks] = useState(false);
+  const [classroomTasksReloadToken, setClassroomTasksReloadToken] = useState(0);
 
   useEffect(() => {
     if (hasPreviewState) {
@@ -93,13 +95,17 @@ export const IndexPage = () => {
 
     if (!classroom?.id) {
       setFetchedClassroomTasks([]);
-      setHasLoadedClassroomTasks(false);
+      setHasLoadedClassroomTasks(true);
+      setClassroomTasksError(null);
+      setIsFetchingClassroomTasks(false);
       return () => {
         cancelled = true;
       };
     }
 
+    setIsFetchingClassroomTasks(true);
     setHasLoadedClassroomTasks(false);
+    setClassroomTasksError(null);
 
     const fetchTasks = async () => {
       try {
@@ -125,23 +131,37 @@ export const IndexPage = () => {
 
         if (!cancelled) {
           setFetchedClassroomTasks(tasks);
+          setClassroomTasksError(null);
           setHasLoadedClassroomTasks(true);
         }
       } catch (error) {
         console.error("Failed to fetch classroom tasks", error);
         if (!cancelled) {
           setFetchedClassroomTasks([]);
+          setClassroomTasksError(
+            `Tidak dapat memuat tugas classroom${
+              error instanceof Error && error.message ? `: ${error.message}` : "."
+            }`,
+          );
           setHasLoadedClassroomTasks(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsFetchingClassroomTasks(false);
         }
       }
     };
 
-    fetchTasks();
+    void fetchTasks();
 
     return () => {
       cancelled = true;
     };
-  }, [classroom?.id]);
+  }, [classroom?.id, classroomTasksReloadToken]);
+
+  const handleRefreshClassroomTasks = useCallback(() => {
+    setClassroomTasksReloadToken((token) => token + 1);
+  }, []);
 
   useEffect(() => {
     if (isPreviewMode) {
@@ -208,6 +228,10 @@ export const IndexPage = () => {
 
     return fetchedClassroomTasks;
   }, [fetchedClassroomTasks, matchesClassroomLanguage]);
+
+  const hasClassroomContext = Boolean(classroom?.id);
+  const shouldShowRefreshClassroomTasks =
+    hasClassroomContext && !isPreviewMode && hasLoadedClassroomTasks && classroomTasks.length === 0;
 
   const lineNumbers = useMemo(() => {
     const totalLines = code.split("\n").length;
@@ -364,13 +388,7 @@ export const IndexPage = () => {
     [code, codeStorageKey, isPreviewMode],
   );
 
-  const instructions = useMemo(() => {
-    if (classroomTasks.length > 0) {
-      return classroomTasks;
-    }
-
-    return resolveInstructions(activeLanguage.name, activeLanguage.shortName);
-  }, [activeLanguage.name, activeLanguage.shortName, classroomTasks]);
+  const instructions = classroomTasks;
 
   const handleRun = useCallback(async () => {
     const trimmed = code.trim();
@@ -575,9 +593,14 @@ export const IndexPage = () => {
             <InstructionsPanel
               classroomName={classroom?.name}
               classroomTasks={classroomTasks}
+              classroomTasksError={classroomTasksError}
               instructions={instructions}
-              isClassroomTasks={classroomTasks.length > 0}
+              isClassroomContext={hasClassroomContext}
+              isLoadingClassroomTasks={isFetchingClassroomTasks}
               labLabel={activeLanguage.labLabel}
+              onRefreshClassroomTasks={
+                shouldShowRefreshClassroomTasks ? handleRefreshClassroomTasks : undefined
+              }
             />
             <OutputPanel output={output} />
           </div>

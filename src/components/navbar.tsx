@@ -1,9 +1,11 @@
-﻿import { Link as HeroUILink } from "@heroui/link";
+import { Button } from "@heroui/button";
+import { Link as HeroUILink } from "@heroui/link";
 import {
   Navbar as HeroUINavbar,
   NavbarBrand,
   NavbarContent,
 } from "@heroui/navbar";
+import { useNavigate } from "react-router-dom";
 
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
@@ -12,7 +14,13 @@ import { useLanguage } from "@/contexts/language-context";
 
 export const Navbar = () => {
   const { activeLanguage } = useLanguage();
-  const { account } = useAuth();
+  const { account, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <HeroUINavbar maxWidth="xl" position="sticky">
@@ -50,9 +58,20 @@ export const Navbar = () => {
 
       <NavbarContent className="sm:basis-full" justify="end">
         {account ? (
-          <span className="hidden text-xs font-medium text-default-500 dark:text-default-300 sm:inline-block">
-            {account.npm} · {account.role === "admin" ? "Admin" : "User"}
-          </span>
+          <>
+            <span className="hidden text-xs font-medium text-default-500 dark:text-default-300 sm:inline-block">
+              {account.npm} | {account.role === "admin" ? "Admin" : "User"}
+            </span>
+            <Button
+              className="ml-3 text-xs font-medium sm:text-sm"
+              color="default"
+              size="sm"
+              variant="flat"
+              onPress={handleLogout}
+            >
+              Keluar
+            </Button>
+          </>
         ) : (
           <HeroUILink className="text-sm font-medium" color="foreground" href="#/login">
             Login
@@ -63,9 +82,3 @@ export const Navbar = () => {
     </HeroUINavbar>
   );
 };
-
-
-
-
-
-

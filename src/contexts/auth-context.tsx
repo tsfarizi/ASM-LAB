@@ -282,6 +282,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         classroom: normalizedClassroom,
       };
 
+      if (payload.isNew && !normalizedClassroom) {
+        try {
+          await fetch(`${API_BASE_URL}/api/accounts/${payload.account.id}`, {
+            method: "DELETE",
+          });
+        } catch (cleanupError) {
+          console.warn("Failed to rollback orphan account", cleanupError);
+        }
+        throw new Error(
+          "NPM tidak ditemukan dalam daftar user maupun peserta classroom. Hubungi admin untuk didaftarkan.",
+        );
+      }
+
       applyState({ account: payload.account, classroom: payload.classroom });
 
       return payload;
