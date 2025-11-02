@@ -19,6 +19,8 @@ import { InstructionsPanel } from "./components/InstructionsPanel";
 import { LanguageCard } from "./components/LanguageCard";
 import { OutputPanel } from "./components/OutputPanel";
 import { PreviewBanner } from "./components/PreviewBanner";
+
+import { API_BASE_URL } from "@/constants/api";
 import {
   getClassroomEndpoint,
   getCodeStorageKey,
@@ -27,6 +29,7 @@ import {
   SUBMISSION_ENDPOINT,
 } from "./constants";
 import { escapeHtml, withTrailingNbsp } from "./utils/highlight";
+import { Button } from "@heroui/button";
 
 const PREVIEW_STATE_KEY = "previewCode";
 
@@ -37,8 +40,8 @@ type PreviewState = {
 export const IndexPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { account, classroom, syncClassroom } = useAuth();
-  const { activeLanguage, languages, lockedLanguage, isLanguageLocked, setLanguageById } =
+  const { account, classroom, syncClassroom, logout, isExamMode, enterFullscreen, setIsTimeUp, isTimeUp } = useAuth();
+  const { activeLanguage, languages, lockedLanguage, isLanguageLocked, setLanguageById } = 
     useLanguage();
 
   const codeStorageKey = useMemo(
@@ -55,7 +58,7 @@ export const IndexPage = () => {
   const [highlightedCode, setHighlightedCode] = useState("&nbsp;");
   const [isRunning, setIsRunning] = useState(false);
   const defaultOutput = useMemo(
-    () => `Hasil eksekusi kode ${activeLanguage.labLabel} akan tampil di sini.`,
+    () => `Hasil eksekusi kode ${activeLanguage.labLabel} akan tampil di sini.`, 
     [activeLanguage.labLabel],
   );
   const [output, setOutput] = useState(defaultOutput);
@@ -64,6 +67,8 @@ export const IndexPage = () => {
   const [classroomTasksError, setClassroomTasksError] = useState<string | null>(null);
   const [isFetchingClassroomTasks, setIsFetchingClassroomTasks] = useState(false);
   const [classroomTasksReloadToken, setClassroomTasksReloadToken] = useState(0);
+
+  const [isExitConfirmVisible, setIsExitConfirmVisible] = useState(false);
 
   useEffect(() => {
     if (hasPreviewState) {
@@ -173,9 +178,24 @@ export const IndexPage = () => {
       return;
     }
 
+    if (classroom?.user?.code && classroom.user.code.trim()) {
+      setCode(classroom.user.code);
+      return;
+    }
+
     const cached = window.localStorage.getItem(codeStorageKey);
-    setCode(cached ?? "");
-  }, [codeStorageKey, isPreviewMode]);
+    if (cached) {
+      setCode(cached);
+      return;
+    }
+
+    if (classroom?.presetupCode) {
+      setCode(classroom.presetupCode);
+      return;
+    }
+
+    setCode("");
+  }, [codeStorageKey, isPreviewMode, classroom]);
 
   const availableLanguages = useMemo(
     () => languages.filter((language) => !language.isArchived),
@@ -559,59 +579,180 @@ export const IndexPage = () => {
     [setLanguageById],
   );
 
+  const handleFinishExam = useCallback(async () => {
+    if (!isExamMode || !classroom?.id || !account?.npm) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/api/classrooms/${classroom.id}/finish`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          npm: account.npm,
+          code: code,
+          language_id: activeLanguage.id,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to finish exam:", error);
+      // Even if finishing fails, log the user out
+    } finally {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+      logout();
+    }
+  }, [isExamMode, classroom?.id, account?.npm, code, activeLanguage.id, logout]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      // If user tries to exit fullscreen during an exam
+      if (isExamMode && !document.fullscreenElement) {
+        // Re-enter fullscreen to prevent leaving
+        enterFullscreen();
+        // Show the custom confirmation modal
+        setIsExitConfirmVisible(true);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, [isExamMode, enterFullscreen]);
+
+  useEffect(() => {
+    if (!classroom?.isExam || !account?.npm) {
+      return;
+    }
+
+    const eventSource = new EventSource(
+      `${API_BASE_URL}/api/classrooms/${classroom.id}/events?npm=${account.npm}`
+    );
+
+    eventSource.onmessage = (event) => {
+      if (event.data === "timeup") {
+        setIsTimeUp(true);
+        alert("Waktu ujian telah habis!");
+        handleRun().then(() => {
+          logout();
+        });
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [classroom?.isExam, classroom?.id, account?.npm, handleRun, logout, setIsTimeUp]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isExamMode) {
+        event.preventDefault();
+        event.returnValue =
+          "Apakah Anda yakin ingin meninggalkan halaman? Ujian Anda akan berakhir.";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isExamMode]);
+
   return (
     <DefaultLayout>
-      <section className="flex min-h-[calc(100vh-5.5rem)] flex-col gap-6 py-4 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8">
-        <div className="flex flex-col gap-5">
-          {isPreviewMode ? <PreviewBanner onExit={handleExitPreview} /> : null}
-          <LanguageCard
-            activeLanguage={activeLanguage}
-            archivedLanguages={archivedLanguages}
-            availableLanguages={availableLanguages}
-            isLanguageLocked={isLanguageLocked}
-            lockedByClassroom={classroom?.name ?? null}
-            lockedLanguageName={lockedLanguageName}
-            onSelect={handleSelectLanguage}
-          />
-          <CodeEditor
-            code={code}
-            highlightedCode={highlightedCode}
-            isPreviewMode={isPreviewMode}
-            language={activeLanguage}
-            lineNumbers={lineNumbers}
-            highlightContainerRef={highlightContainerRef}
-            lineNumbersContainerRef={lineNumbersContainerRef}
-            lineNumbersInnerRef={lineNumbersInnerRef}
-            textareaRef={textareaRef}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onScroll={handleScroll}
-          />
-        </div>
-        <aside className="flex h-full flex-col gap-5 lg:h-[680px]">
-          <div className="flex flex-1 flex-col gap-5 overflow-hidden">
-            <InstructionsPanel
-              classroomName={classroom?.name}
-              classroomTasks={classroomTasks}
-              classroomTasksError={classroomTasksError}
-              instructions={instructions}
-              isClassroomContext={hasClassroomContext}
-              isLoadingClassroomTasks={isFetchingClassroomTasks}
-              labLabel={activeLanguage.labLabel}
-              onRefreshClassroomTasks={
-                shouldShowRefreshClassroomTasks ? handleRefreshClassroomTasks : undefined
-              }
+      <>
+        <section className="flex min-h-[calc(100vh-5.5rem)] flex-col gap-6 py-4 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8">
+          <div className="flex flex-col gap-5">
+            {isPreviewMode ? <PreviewBanner onExit={handleExitPreview} /> : null}
+            <LanguageCard
+              activeLanguage={activeLanguage}
+              archivedLanguages={archivedLanguages}
+              availableLanguages={availableLanguages}
+              isLanguageLocked={isLanguageLocked}
+              lockedByClassroom={classroom?.name ?? null}
+              lockedLanguageName={lockedLanguageName}
+              onSelect={handleSelectLanguage}
             />
-            <OutputPanel output={output} />
+            <CodeEditor
+              code={code}
+              highlightedCode={highlightedCode}
+              isPreviewMode={isPreviewMode || isTimeUp}
+              language={activeLanguage}
+              lineNumbers={lineNumbers}
+              highlightContainerRef={highlightContainerRef}
+              lineNumbersContainerRef={lineNumbersContainerRef}
+              lineNumbersInnerRef={lineNumbersInnerRef}
+              textareaRef={textareaRef}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onScroll={handleScroll}
+            />
           </div>
-          <ActionButtons
-            isPreviewMode={isPreviewMode}
-            isRunning={isRunning}
-            onExitPreview={handleExitPreview}
-            onRun={handleRun}
-          />
-        </aside>
-      </section>
+          <aside className="flex h-full flex-col gap-5 lg:h-[680px]">
+            <div className="flex flex-1 flex-col gap-5 overflow-hidden">
+              <InstructionsPanel
+                classroomName={classroom?.name}
+                classroomTasks={classroomTasks}
+                classroomTasksError={classroomTasksError}
+                instructions={instructions}
+                isClassroomContext={hasClassroomContext}
+                isLoadingClassroomTasks={isFetchingClassroomTasks}
+                labLabel={activeLanguage.labLabel}
+                onRefreshClassroomTasks={
+                  shouldShowRefreshClassroomTasks ? handleRefreshClassroomTasks : undefined
+                }
+              />
+              <OutputPanel output={output} />
+            </div>
+            <ActionButtons
+              isPreviewMode={isPreviewMode}
+              isRunning={isRunning}
+              onExitPreview={handleExitPreview}
+              onRun={handleRun}
+            />
+          </aside>
+        </section>
+        {isExamMode && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <Button color="danger" variant="solid" onPress={() => setIsExitConfirmVisible(true)}>
+              Selesai & Keluar
+            </Button>
+          </div>
+        )}
+              {isExitConfirmVisible && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
+                  <div className="w-full max-w-md rounded-2xl border border-transparent bg-white p-6 text-center shadow-xl dark:border-default-200 dark:bg-default-100">
+                    <h2 className="text-xl font-bold text-default-900 dark:text-default-50">
+                      Konfirmasi Selesai Ujian
+                    </h2>
+                    <p className="mt-2 text-default-700 dark:text-default-200">
+                      Apakah Anda yakin ingin menyelesaikan ujian? Kode terakhir Anda akan
+                      dijalankan dan sesi akan berakhir.
+                    </p>              <div className="mt-6 flex justify-center gap-4">
+                <Button
+                  variant="flat"
+                  onPress={() => setIsExitConfirmVisible(false)}
+                >
+                  Batal
+                </Button>
+                <Button color="danger" variant="solid" onPress={handleFinishExam}>
+                  Ya, Selesaikan
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     </DefaultLayout>
   );
 };

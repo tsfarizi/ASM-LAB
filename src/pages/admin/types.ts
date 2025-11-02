@@ -5,6 +5,7 @@ export type ApiUser = {
   name: string;
   npm: string;
   code: string;
+  active: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -15,6 +16,10 @@ export type ApiClassroom = {
   programmingLanguage: string | null;
   languageLocked: boolean;
   tasks: string[];
+  isExam: boolean;
+  testCode: string;
+  timeLimit: number;
+  presetupCode: string;
   users: ApiUser[];
   createdAt: string;
   updatedAt: string;
@@ -25,6 +30,10 @@ export type CreateClassroomPayload = {
   programmingLanguage?: string | null;
   lockLanguage?: boolean | null;
   tasks: string[];
+  isExam?: boolean;
+  testCode?: string;
+  timeLimit?: number;
+  presetupCode?: string;
 };
 
 export type UpdateClassroomPayload = {
@@ -32,6 +41,10 @@ export type UpdateClassroomPayload = {
   programmingLanguage: string | null;
   lockLanguage: boolean | null;
   tasks: string[];
+  isExam?: boolean;
+  testCode?: string;
+  timeLimit?: number;
+  presetupCode?: string;
 };
 
 export type ApiAccount = AuthAccount;
@@ -44,4 +57,5 @@ export type ClassroomUserForm = {
 export type ManagedUserForm = {
   name: string;
   npm: string;
+  active: boolean;
 };

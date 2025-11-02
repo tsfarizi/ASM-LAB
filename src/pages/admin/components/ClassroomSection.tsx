@@ -1,5 +1,7 @@
 import { Button } from "@heroui/button";
 
+import { UserStatusToggle } from "./UserStatusToggle";
+
 import { formatDateTime } from "../utils";
 import { ApiClassroom, ClassroomUserForm, ManagedUserForm } from "../types";
 
@@ -15,6 +17,10 @@ type ClassroomSectionProps = {
   newClassroomLanguageId: number | null;
   newClassroomLockLanguage: boolean;
   newClassroomTasks: string[];
+  newClassroomIsExam: boolean;
+  newClassroomTestCode: string;
+  newClassroomTimeLimit: number;
+  newClassroomPresetupCode: string;
   classroomFormError: string | null;
   classroomActionError: string | null;
   classroomError: string | null;
@@ -24,6 +30,10 @@ type ClassroomSectionProps = {
   editingLanguageId: number | null;
   editingLockLanguage: boolean;
   editingTasks: string[];
+  editingIsExam: boolean;
+  editingTestCode: string;
+  editingTimeLimit: number;
+  editingPresetupCode: string;
   editingError: string | null;
   isSavingClassroom: boolean;
   deletingClassroomId: number | null;
@@ -36,11 +46,16 @@ type ClassroomSectionProps = {
   managedUserDeleting: Record<number, boolean>;
   clearingClassroomCodes: Record<number, boolean>;
   clearClassroomCodesErrors: Record<number, string | null>;
+  expandedClassrooms: Record<number, boolean>;
   onRefresh: () => void;
   onCreateClassroom: () => void;
   onChangeNewClassroomName: (value: string) => void;
   onChangeNewClassroomLanguage: (value: number | null) => void;
   onToggleNewClassroomLock: (value: boolean) => void;
+  onChangeNewClassroomIsExam: (value: boolean) => void;
+  onChangeNewClassroomTestCode: (value: string) => void;
+  onChangeNewClassroomTimeLimit: (value: string) => void;
+  onChangeNewClassroomPresetupCode: (value: string) => void;
   onEditClassroom: (classroom: ApiClassroom) => void;
   onCancelEditClassroom: () => void;
   onUpdateClassroom: () => void;
@@ -48,6 +63,10 @@ type ClassroomSectionProps = {
   onChangeEditingName: (value: string) => void;
   onChangeEditingLanguage: (value: number | null) => void;
   onToggleEditingLockLanguage: (value: boolean) => void;
+  onChangeEditingIsExam: (value: boolean) => void;
+  onChangeEditingTestCode: (value: string) => void;
+  onChangeEditingTimeLimit: (value: string) => void;
+  onChangeEditingPresetupCode: (value: string) => void;
   onChangeNewClassroomTask: (index: number, value: string) => void;
   onAddNewClassroomTask: () => void;
   onRemoveNewClassroomTask: (index: number) => void;
@@ -67,6 +86,8 @@ type ClassroomSectionProps = {
   onDeleteManagedUser: (classroomId: number, userId: number) => void;
   onPreviewUserCode: (code: string) => void;
   onClearClassroomCodes: (classroomId: number) => void;
+  onToggleClassroom: (classroomId: number) => void;
+  onSetAllUsersActiveStatus: (classroomId: number, isActive: boolean) => void;
 };
 
 export const ClassroomSection = ({
@@ -79,6 +100,10 @@ export const ClassroomSection = ({
   newClassroomLanguageId,
   newClassroomLockLanguage,
   newClassroomTasks,
+  newClassroomIsExam,
+  newClassroomTestCode,
+  newClassroomTimeLimit,
+  newClassroomPresetupCode,
   classroomFormError,
   classroomActionError,
   classroomError,
@@ -88,6 +113,10 @@ export const ClassroomSection = ({
   editingLanguageId,
   editingLockLanguage,
   editingTasks,
+  editingIsExam,
+  editingTestCode,
+  editingTimeLimit,
+  editingPresetupCode,
   editingError,
   isSavingClassroom,
   deletingClassroomId,
@@ -100,11 +129,16 @@ export const ClassroomSection = ({
   managedUserDeleting,
   clearingClassroomCodes,
   clearClassroomCodesErrors,
+  expandedClassrooms,
   onRefresh,
   onCreateClassroom,
   onChangeNewClassroomName,
   onChangeNewClassroomLanguage,
   onToggleNewClassroomLock,
+  onChangeNewClassroomIsExam,
+  onChangeNewClassroomTestCode,
+  onChangeNewClassroomTimeLimit,
+  onChangeNewClassroomPresetupCode,
   onEditClassroom,
   onCancelEditClassroom,
   onUpdateClassroom,
@@ -112,6 +146,10 @@ export const ClassroomSection = ({
   onChangeEditingName,
   onChangeEditingLanguage,
   onToggleEditingLockLanguage,
+  onChangeEditingIsExam,
+  onChangeEditingTestCode,
+  onChangeEditingTimeLimit,
+  onChangeEditingPresetupCode,
   onChangeNewClassroomTask,
   onAddNewClassroomTask,
   onRemoveNewClassroomTask,
@@ -125,6 +163,8 @@ export const ClassroomSection = ({
   onDeleteManagedUser,
   onPreviewUserCode,
   onClearClassroomCodes,
+  onToggleClassroom,
+  onSetAllUsersActiveStatus,
 }: ClassroomSectionProps) => {
   const allLanguages = [...availableLanguages, ...archivedLanguages];
 
@@ -262,6 +302,7 @@ export const ClassroomSection = ({
         {classrooms.map((classroom) => {
           const isEditing = editingClassroomId === classroom.id;
           const isDeleting = deletingClassroomId === classroom.id;
+          const isExpanded = expandedClassrooms[classroom.id] ?? false;
           const resolvedLanguage = findLanguageByName(
             classroom.programmingLanguage,
           );
@@ -284,10 +325,16 @@ export const ClassroomSection = ({
               key={classroom.id}
               className="rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10"
             >
-              <div className="flex flex-col gap-2 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
-                    {classroom.name}
+              <div
+                className="flex cursor-pointer flex-col gap-4 border-b border-default-200 pb-4 dark:border-default-100/40 md:flex-row md:items-start md:justify-between"
+                onClick={() => onToggleClassroom(classroom.id)}
+              >
+                <div className="flex-1">
+                  <h2 className="flex items-center gap-3 text-xl font-semibold text-default-900 dark:text-default-50">
+                    <span>{classroom.name}</span>
+                    <span className="text-lg font-semibold transition-transform duration-300">
+                      {isExpanded ? "v" : ">"}
+                    </span>
                   </h2>
                   <p className="text-sm text-default-600 dark:text-default-200">
                     Bahasa pemrograman:{" "}
@@ -298,90 +345,47 @@ export const ClassroomSection = ({
                   <p className="text-xs text-default-500 dark:text-default-300">
                     Status bahasa: {languageStatus}
                   </p>
+                  {classroom.isExam ? (
+                    <p className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+                      Ujian Aktif ({classroom.timeLimit} menit)
+                    </p>
+                  ) : null}
                 </div>
-                <div className="flex flex-col items-start gap-2 text-xs text-default-500 dark:text-default-300 md:items-end">
+                <div className="flex flex-col items-start gap-3 text-xs text-default-500 dark:text-default-300 md:items-end md:text-right">
                   <div>
                     <p>Dibuat: {formatDateTime(classroom.createdAt)}</p>
                     <p>Diubah: {formatDateTime(classroom.updatedAt)}</p>
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2 text-sm md:text-base">
-                    {isEditing ? (
-                      <>
-                        <Button
-                          color="primary"
-                          isLoading={isSavingClassroom}
-                          variant="solid"
-                          onPress={onUpdateClassroom}
-                        >
-                          Simpan Perubahan
-                        </Button>
-                        <Button
-                          disabled={isSavingClassroom}
-                          variant="flat"
-                          onPress={onCancelEditClassroom}
-                        >
-                          Batal
-                        </Button>
-                        <Button
-                          color="warning"
-                          isDisabled={!hasUsers || isSavingClassroom}
-                          isLoading={isClearingCodes}
-                          variant="flat"
-                          onPress={() => onClearClassroomCodes(classroom.id)}
-                        >
-                          Hapus Semua Kode
-                        </Button>
-                        <Button
-                          color="danger"
-                          isLoading={isDeleting}
-                          variant="flat"
-                          onPress={() => onDeleteClassroom(classroom.id)}
-                        >
-                          Hapus
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="flat"
-                          onPress={() => onEditClassroom(classroom)}
-                        >
-                          Ubah
-                        </Button>
-                        <Button
-                          color="warning"
-                          isDisabled={!hasUsers}
-                          isLoading={isClearingCodes}
-                          variant="flat"
-                          onPress={() => onClearClassroomCodes(classroom.id)}
-                        >
-                          Hapus Semua Kode
-                        </Button>
-                        <Button
-                          color="danger"
-                          isLoading={isDeleting}
-                          variant="flat"
-                          onPress={() => onDeleteClassroom(classroom.id)}
-                        >
-                          Hapus
-                        </Button>
-                      </>
-                    )}
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditClassroom(classroom);
+                      }}
+                    >
+                      Ubah
+                    </Button>
+                    <Button
+                      color="danger"
+                      size="sm"
+                      isLoading={isDeleting}
+                      variant="flat"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteClassroom(classroom.id);
+                      }}
+                    >
+                      Hapus
+                    </Button>
                   </div>
-                  {clearCodesError ? (
-                    <p className="text-xs text-danger-500 dark:text-danger-300">
-                      {clearCodesError}
-                    </p>
-                  ) : null}
-                  {!hasUsers ? (
-                    <p className="text-xs text-default-500 dark:text-default-300">
-                      Belum ada user terdaftar.
-                    </p>
-                  ) : null}
                 </div>
               </div>
 
-              <div className="mt-5 space-y-5">
+              {isExpanded && (
+                <div className="mt-5 space-y-5">
+
                 {isEditing ? (
                   <div className="space-y-4">
                     <div className="grid gap-3 md:grid-cols-2">
@@ -420,6 +424,45 @@ export const ClassroomSection = ({
                           agar user bebas memilih.
                         </p>
                       </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label
+                        className="text-sm font-medium text-default-700 dark:text-default-200"
+                        htmlFor={`editing-presetup-code-${classroom.id}`}
+                      >
+                        Kode Awal (Presetup)
+                      </label>
+                      <textarea
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={isSavingClassroom}
+                        id={`editing-presetup-code-${classroom.id}`}
+                        placeholder="Kode yang akan muncul di editor user saat login"
+                        rows={5}
+                        value={editingPresetupCode}
+                        onChange={(event) =>
+                          onChangeEditingPresetupCode(event.target.value)
+                        }
+                      />
+                      <p className="text-xs text-default-500 dark:text-default-300">
+                        Kode ini akan menjadi konten awal di editor user.
+                      </p>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        color="primary"
+                        isLoading={isSavingClassroom}
+                        variant="solid"
+                        onPress={onUpdateClassroom}
+                      >
+                        Simpan Perubahan
+                      </Button>
+                      <Button
+                        disabled={isSavingClassroom}
+                        variant="flat"
+                        onPress={onCancelEditClassroom}
+                      >
+                        Batal
+                      </Button>
                     </div>
                     <label
                       className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300"
@@ -463,6 +506,74 @@ export const ClassroomSection = ({
                         onRemove: onRemoveEditingTask,
                       })}
                     </div>
+                    <div className="space-y-3 rounded-2xl border border-default-200 bg-default-100/50 p-4 dark:border-default-100/40 dark:bg-default-100/10">
+                      <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+                        Pengaturan Ujian
+                      </h4>
+                      <div className="flex flex-col gap-3">
+                        <label
+                          className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300"
+                          htmlFor={`editing-is-exam-${classroom.id}`}
+                        >
+                          <input
+                            checked={editingIsExam}
+                            className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
+                            disabled={isSavingClassroom}
+                            id={`editing-is-exam-${classroom.id}`}
+                            type="checkbox"
+                            onChange={(event) =>
+                              onChangeEditingIsExam(event.target.checked)
+                            }
+                          />
+                          Aktifkan mode ujian
+                        </label>
+                        {editingIsExam && (
+                          <>
+                            <div className="flex flex-col gap-2">
+                              <label
+                                className="text-sm font-medium text-default-700 dark:text-default-200"
+                                htmlFor={`editing-time-limit-${classroom.id}`}
+                              >
+                                Waktu Ujian (menit)
+                              </label>
+                              <input
+                                className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                disabled={isSavingClassroom}
+                                id={`editing-time-limit-${classroom.id}`}
+                                placeholder="Contoh: 120"
+                                type="number"
+                                value={editingTimeLimit}
+                                onChange={(event) =>
+                                  onChangeEditingTimeLimit(event.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <label
+                                className="text-sm font-medium text-default-700 dark:text-default-200"
+                                htmlFor={`editing-test-code-${classroom.id}`}
+                              >
+                                Kode Testing
+                              </label>
+                              <textarea
+                                className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                disabled={isSavingClassroom}
+                                id={`editing-test-code-${classroom.id}`}
+                                placeholder="Kode untuk testing jawaban user"
+                                rows={5}
+                                value={editingTestCode}
+                                onChange={(event) =>
+                                  onChangeEditingTestCode(event.target.value)
+                                }
+                              />
+                              <p className="text-xs text-default-500 dark:text-default-300">
+                                Kode ini akan digunakan untuk membungkus dan mengetes kode dari user.
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ) : null}
 
@@ -494,9 +605,44 @@ export const ClassroomSection = ({
                 ) : null}
 
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-200">
-                    Daftar User ({classroom.users.length})
-                  </h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-default-500 dark:text-default-200">
+                      Daftar User ({classroom.users.length})
+                    </h3>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={() => onSetAllUsersActiveStatus(classroom.id, true)}
+                        isDisabled={!hasUsers}
+                      >
+                        Aktifkan Semua
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={() => onSetAllUsersActiveStatus(classroom.id, false)}
+                        isDisabled={!hasUsers}
+                      >
+                        Nonaktifkan Semua
+                      </Button>
+                      <Button
+                        color="warning"
+                        size="sm"
+                        isDisabled={!hasUsers}
+                        isLoading={isClearingCodes}
+                        variant="flat"
+                        onPress={() => onClearClassroomCodes(classroom.id)}
+                      >
+                        Hapus Semua Kode
+                      </Button>
+                    </div>
+                  </div>
+                  {clearCodesError && (
+                    <p className="mt-2 text-xs text-danger-500 dark:text-danger-300">
+                      {clearCodesError}
+                    </p>
+                  )}
                   {classroom.users.length === 0 ? (
                     <p className="mt-3 rounded-2xl border border-default-200 bg-default-100 px-4 py-3 text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
                       Belum ada user dalam classroom ini.
@@ -507,6 +653,7 @@ export const ClassroomSection = ({
                         <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-300">
                           <tr>
                             <th className="px-3 py-2 font-semibold">Nama</th>
+                            <th className="px-3 py-2 font-semibold">Status</th>
                             <th className="px-3 py-2 font-semibold">NPM</th>
                             <th className="px-3 py-2 font-semibold">Kode</th>
                             <th className="px-3 py-2 font-semibold">
@@ -525,6 +672,7 @@ export const ClassroomSection = ({
                             const managedForm = managedUserForms[user.id] ?? {
                               name: user.name,
                               npm: user.npm,
+                              active: user.active,
                             };
                             const isSavingUser =
                               managedUserSaving[user.id] ?? false;
@@ -553,6 +701,14 @@ export const ClassroomSection = ({
                                       }
                                     />
                                   </div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <UserStatusToggle
+                                    classroomId={classroom.id}
+                                    userId={user.id}
+                                    initialIsActive={user.active}
+                                    isBusy={isBusy}
+                                  />
                                 </td>
                                 <td className="px-3 py-2 text-default-600 dark:text-default-300">
                                   <input
@@ -693,6 +849,7 @@ export const ClassroomSection = ({
                   </div>
                 </div>
               </div>
+              )}
             </article>
           );
         })}
@@ -763,6 +920,28 @@ export const ClassroomSection = ({
               memilih sendiri.
             </p>
           </div>
+          <div className="flex flex-col gap-2 md:col-span-2">
+            <label
+              className="text-sm font-medium text-default-700 dark:text-default-200"
+              htmlFor="new-classroom-presetup-code"
+            >
+              Kode Awal (Presetup)
+            </label>
+            <textarea
+              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              disabled={isCreatingClassroom}
+              id="new-classroom-presetup-code"
+              placeholder="Kode yang akan muncul di editor user saat login"
+              rows={5}
+              value={newClassroomPresetupCode}
+              onChange={(event) =>
+                onChangeNewClassroomPresetupCode(event.target.value)
+              }
+            />
+            <p className="text-xs text-default-500 dark:text-default-300">
+              Kode ini akan menjadi konten awal di editor user.
+            </p>
+          </div>
         </div>
         <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/60 p-4 dark:border-default-100/40 dark:bg-default-100/10">
           <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
@@ -774,6 +953,74 @@ export const ClassroomSection = ({
             onChange: onChangeNewClassroomTask,
             onRemove: onRemoveNewClassroomTask,
           })}
+        </div>
+        <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/60 p-4 dark:border-default-100/40 dark:bg-default-100/10">
+          <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+            Pengaturan Ujian
+          </h4>
+          <div className="flex flex-col gap-3">
+            <label
+              className="flex items-center gap-2 text-sm text-default-600 dark:text-default-300"
+              htmlFor="new-classroom-is-exam"
+            >
+              <input
+                checked={newClassroomIsExam}
+                className="h-4 w-4 rounded border-default-300 text-primary focus:ring-primary"
+                disabled={isCreatingClassroom}
+                id="new-classroom-is-exam"
+                type="checkbox"
+                onChange={(event) =>
+                  onChangeNewClassroomIsExam(event.target.checked)
+                }
+              />
+              Aktifkan mode ujian
+            </label>
+            {newClassroomIsExam && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <label
+                    className="text-sm font-medium text-default-700 dark:text-default-200"
+                    htmlFor="new-classroom-time-limit"
+                  >
+                    Waktu Ujian (menit)
+                  </label>
+                  <input
+                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                    disabled={isCreatingClassroom}
+                    id="new-classroom-time-limit"
+                    placeholder="Contoh: 120"
+                    type="number"
+                    value={newClassroomTimeLimit}
+                    onChange={(event) =>
+                      onChangeNewClassroomTimeLimit(event.target.value)
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label
+                    className="text-sm font-medium text-default-700 dark:text-default-200"
+                    htmlFor="new-classroom-test-code"
+                  >
+                    Kode Testing
+                  </label>
+                  <textarea
+                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                    disabled={isCreatingClassroom}
+                    id="new-classroom-test-code"
+                    placeholder="Kode untuk testing jawaban user"
+                    rows={5}
+                    value={newClassroomTestCode}
+                    onChange={(event) =>
+                      onChangeNewClassroomTestCode(event.target.value)
+                    }
+                  />
+                  <p className="text-xs text-default-500 dark:text-default-300">
+                    Kode ini akan digunakan untuk membungkus dan mengetes kode dari user.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <label

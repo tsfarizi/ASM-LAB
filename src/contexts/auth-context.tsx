@@ -36,6 +36,9 @@ export type ClassroomInfo = {
   name: string;
   programmingLanguage: string | null;
   languageLocked: boolean;
+  isExam: boolean;
+  timeLimit: number | null;
+  presetupCode: string;
   tasks: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -74,6 +77,10 @@ type AuthContextValue = {
   syncClassroom: (
     classroom: ClassroomInfo | null | ((prev: ClassroomInfo | null) => ClassroomInfo | null),
   ) => void;
+  isExamMode: boolean;
+  isTimeUp: boolean;
+  enterFullscreen: () => void;
+  setIsTimeUp: (value: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -92,6 +99,10 @@ const normalizeClassroom = (value: unknown): ClassroomInfo | null => {
   }
 
   const languageLocked = Boolean(value.languageLocked);
+  const isExam = Boolean(value.isExam);
+  const timeLimitValue = Number.parseInt(String(value.timeLimit ?? ""), 10);
+  const timeLimit = isExam && Number.isFinite(timeLimitValue) ? timeLimitValue : null;
+  const presetupCode = typeof value.presetupCode === "string" ? value.presetupCode : "";
   const programmingLanguage =
     typeof value.programmingLanguage === "string"
       ? value.programmingLanguage
@@ -124,6 +135,9 @@ const normalizeClassroom = (value: unknown): ClassroomInfo | null => {
     name: typeof value.name === "string" ? value.name : String(id),
     programmingLanguage,
     languageLocked,
+    isExam,
+    timeLimit,
+    presetupCode,
     tasks,
     createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
@@ -168,6 +182,12 @@ const normalizeStoredState = (value: unknown): AuthState | null => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AuthState>({ account: null, classroom: null });
   const [isLoading, setIsLoading] = useState(true);
+  const [isTimeUp, setIsTimeUp] = useState(false);
+
+  const isExamMode = useMemo(
+    () => state.classroom?.isExam ?? false,
+    [state.classroom],
+  );
 
   const persistState = useCallback((next: AuthState) => {
     if (next.account) {
@@ -306,6 +326,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     applyState({ account: null, classroom: null });
   }, [applyState]);
 
+  const enterFullscreen = useCallback(() => {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.error(
+        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
+      );
+    });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       account: state.account,
@@ -315,8 +343,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logout,
       syncAccount,
       syncClassroom,
+      isExamMode,
+      isTimeUp,
+      enterFullscreen,
+      setIsTimeUp,
     }),
-    [state.account, state.classroom, isLoading, login, logout, syncAccount, syncClassroom],
+    [state.account, state.classroom, isLoading, login, logout, syncAccount, syncClassroom, isExamMode, isTimeUp, enterFullscreen],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

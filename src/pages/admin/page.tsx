@@ -56,6 +56,10 @@ export const AdminPage = () => {
   const [newClassroomLanguageId, setNewClassroomLanguageId] = useState<number | null>(null);
   const [newClassroomLockLanguage, setNewClassroomLockLanguage] = useState(false);
   const [newClassroomTasks, setNewClassroomTasks] = useState<string[]>([""]);
+  const [newClassroomIsExam, setNewClassroomIsExam] = useState(false);
+  const [newClassroomTestCode, setNewClassroomTestCode] = useState("");
+  const [newClassroomTimeLimit, setNewClassroomTimeLimit] = useState(0);
+  const [newClassroomPresetupCode, setNewClassroomPresetupCode] = useState("");
   const [classroomFormError, setClassroomFormError] = useState<string | null>(null);
   const [classroomActionError, setClassroomActionError] = useState<string | null>(null);
   const [isCreatingClassroom, setIsCreatingClassroom] = useState(false);
@@ -64,6 +68,10 @@ export const AdminPage = () => {
   const [editingLanguageId, setEditingLanguageId] = useState<number | null>(null);
   const [editingLockLanguage, setEditingLockLanguage] = useState(false);
   const [editingTasks, setEditingTasks] = useState<string[]>([]);
+  const [editingIsExam, setEditingIsExam] = useState(false);
+  const [editingTestCode, setEditingTestCode] = useState("");
+  const [editingTimeLimit, setEditingTimeLimit] = useState(0);
+  const [editingPresetupCode, setEditingPresetupCode] = useState("");
   const [editingError, setEditingError] = useState<string | null>(null);
   const [isSavingClassroom, setIsSavingClassroom] = useState(false);
   const [deletingClassroomId, setDeletingClassroomId] = useState<number | null>(null);
@@ -91,6 +99,8 @@ export const AdminPage = () => {
   const [managedUserDeleting, setManagedUserDeleting] = useState<ManagedUserDeleting>({});
   const [clearingClassroomCodes, setClearingClassroomCodes] = useState<Record<number, boolean>>({});
   const [clearClassroomCodesErrors, setClearClassroomCodesErrors] = useState<Record<number, string | null>>({});
+  const [expandedClassrooms, setExpandedClassrooms] = useState<Record<number, boolean>>({});
+  const [isAccountSectionExpanded, setIsAccountSectionExpanded] = useState(false);
 
   const { languages } = useLanguage();
 
@@ -168,7 +178,7 @@ export const AdminPage = () => {
       setManagedUserForms(
         normalizedClassrooms.reduce<ManagedUserState>((accumulator, classroom) => {
           classroom.users.forEach((user) => {
-            accumulator[user.id] = { name: user.name, npm: user.npm };
+            accumulator[user.id] = { name: user.name, npm: user.npm, active: user.active };
           });
           return accumulator;
         }, {}),
@@ -280,6 +290,10 @@ export const AdminPage = () => {
       name: trimmedName,
       lockLanguage: selectedLanguage ? newClassroomLockLanguage : false,
       tasks: trimmedTasks,
+      isExam: newClassroomIsExam,
+      testCode: newClassroomTestCode,
+      timeLimit: newClassroomTimeLimit,
+      presetupCode: newClassroomPresetupCode,
     };
 
     if (selectedLanguage) {
@@ -307,6 +321,10 @@ export const AdminPage = () => {
       setNewClassroomLanguageId(null);
       setNewClassroomLockLanguage(false);
       setNewClassroomTasks([""]);
+      setNewClassroomIsExam(false);
+      setNewClassroomTestCode("");
+      setNewClassroomTimeLimit(0);
+      setNewClassroomPresetupCode("");
       await fetchClassrooms();
     } catch (error) {
       setClassroomActionError(
@@ -326,6 +344,10 @@ export const AdminPage = () => {
     setEditingLanguageId(matchedLanguage?.id ?? null);
     setEditingLockLanguage(matchedLanguage ? classroom.languageLocked : false);
     setEditingTasks(classroom.tasks.length > 0 ? [...classroom.tasks] : [""]);
+    setEditingIsExam(classroom.isExam);
+    setEditingTestCode(classroom.testCode);
+    setEditingTimeLimit(classroom.timeLimit);
+    setEditingPresetupCode(classroom.presetupCode);
   };
 
   const handleCancelEditClassroom = () => {
@@ -337,6 +359,10 @@ export const AdminPage = () => {
     setEditingLanguageId(null);
     setEditingLockLanguage(false);
     setEditingTasks([]);
+    setEditingIsExam(false);
+    setEditingTestCode("");
+    setEditingTimeLimit(0);
+    setEditingPresetupCode("");
     setClassroomActionError(null);
     setEditingError(null);
   };
@@ -363,6 +389,10 @@ export const AdminPage = () => {
       programmingLanguage: selectedLanguage ? selectedLanguage.name : null,
       lockLanguage: selectedLanguage ? editingLockLanguage : false,
       tasks: trimmedTasks,
+      isExam: editingIsExam,
+      testCode: editingTestCode,
+      timeLimit: editingTimeLimit,
+      presetupCode: editingPresetupCode,
     };
 
     setClassroomActionError(null);
@@ -844,6 +874,38 @@ export const AdminPage = () => {
     }
   };
 
+  const handleToggleNewClassroomIsExam = (value: boolean) => {
+    setNewClassroomIsExam(value);
+  };
+
+  const handleChangeNewClassroomTestCode = (value: string) => {
+    setNewClassroomTestCode(value);
+  };
+
+  const handleChangeNewClassroomTimeLimit = (value: string) => {
+    setNewClassroomTimeLimit(Number(value) || 0);
+  };
+
+  const handleToggleEditingIsExam = (value: boolean) => {
+    setEditingIsExam(value);
+  };
+
+  const handleChangeEditingTestCode = (value: string) => {
+    setEditingTestCode(value);
+  };
+
+  const handleChangeEditingTimeLimit = (value: string) => {
+    setEditingTimeLimit(Number(value) || 0);
+  };
+
+  const handleChangeNewClassroomPresetupCode = (value: string) => {
+    setNewClassroomPresetupCode(value);
+  };
+
+  const handleChangeEditingPresetupCode = (value: string) => {
+    setEditingPresetupCode(value);
+  };
+
   const handleChangeNewAccountNpm = (value: string) => {
     setNewAccountNpm(value);
     if (accountFormError) {
@@ -859,6 +921,64 @@ export const AdminPage = () => {
     setFirstAdminNpm(value);
     if (firstAdminError) {
       setFirstAdminError(null);
+    }
+  };
+
+  const handleToggleClassroom = (classroomId: number) => {
+    setExpandedClassrooms((prev) => ({
+      ...prev,
+      [classroomId]: !prev[classroomId],
+    }));
+  };
+
+  const handleToggleAccountSection = () => {
+    setIsAccountSectionExpanded((prev) => !prev);
+  };
+
+  const handleSetAllUsersActiveStatus = async (
+    classroomId: number,
+    isActive: boolean,
+  ) => {
+    const originalClassrooms = [...classrooms];
+    const updatedClassrooms = classrooms.map((c) => {
+      if (c.id === classroomId) {
+        return {
+          ...c,
+          users: c.users.map((u) => ({ ...u, active: isActive })),
+        };
+      }
+      return c;
+    });
+    setClassrooms(updatedClassrooms);
+
+    const classroom = classrooms.find((c) => c.id === classroomId);
+    if (!classroom) return;
+
+    const userIds = classroom.users.map((u) => u.id);
+    if (userIds.length === 0) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/classrooms/${classroomId}/users/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userIds, active: isActive }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.message ?? "Gagal memperbarui status user.");
+      }
+    } catch (error) {
+      setClassroomActionError(
+        error instanceof Error ? error.message : "Terjadi kesalahan",
+      );
+      // Revert on failure
+      setClassrooms(originalClassrooms);
     }
   };
 
@@ -915,6 +1035,8 @@ export const AdminPage = () => {
           onLogout={handleLogout}
         />
         <AccountSection
+          isExpanded={isAccountSectionExpanded}
+          onToggle={handleToggleAccountSection}
           accountFormError={accountFormError}
           accounts={accounts}
           accountsError={accountsError}
@@ -943,11 +1065,16 @@ export const AdminPage = () => {
           clearingClassroomCodes={clearingClassroomCodes}
           deletingClassroomId={deletingClassroomId}
           editingClassroomId={editingClassroomId}
+          expandedClassrooms={expandedClassrooms}
           editingError={editingError}
           editingLanguageId={editingLanguageId}
           editingLockLanguage={editingLockLanguage}
           editingName={editingName}
           editingTasks={editingTasks}
+          editingIsExam={editingIsExam}
+          editingTestCode={editingTestCode}
+          editingTimeLimit={editingTimeLimit}
+          editingPresetupCode={editingPresetupCode}
           isCreatingClassroom={isCreatingClassroom}
           isLoading={isClassroomLoading}
           isRefreshing={isRefreshing}
@@ -960,6 +1087,10 @@ export const AdminPage = () => {
           newClassroomLockLanguage={newClassroomLockLanguage}
           newClassroomName={newClassroomName}
           newClassroomTasks={newClassroomTasks}
+          newClassroomIsExam={newClassroomIsExam}
+          newClassroomTestCode={newClassroomTestCode}
+          newClassroomTimeLimit={newClassroomTimeLimit}
+          newClassroomPresetupCode={newClassroomPresetupCode}
           onAddUserToClassroom={handleAddUserToClassroom}
           onAddEditingTask={handleAddEditingTask}
           onAddNewClassroomTask={handleAddNewClassroomTask}
@@ -968,16 +1099,26 @@ export const AdminPage = () => {
           onChangeEditingLanguage={handleChangeEditingLanguage}
           onChangeEditingName={handleChangeEditingName}
           onChangeEditingTask={handleChangeEditingTask}
+          onChangeEditingIsExam={handleToggleEditingIsExam}
+          onChangeEditingTestCode={handleChangeEditingTestCode}
+          onChangeEditingTimeLimit={handleChangeEditingTimeLimit}
+          onChangeEditingPresetupCode={handleChangeEditingPresetupCode}
           onChangeManagedUserForm={handleChangeManagedUserForm}
           onChangeNewClassroomLanguage={handleChangeNewClassroomLanguage}
           onChangeNewClassroomName={handleChangeNewClassroomName}
           onChangeNewClassroomTask={handleChangeNewClassroomTask}
+          onChangeNewClassroomIsExam={handleToggleNewClassroomIsExam}
+          onChangeNewClassroomTestCode={handleChangeNewClassroomTestCode}
+          onChangeNewClassroomTimeLimit={handleChangeNewClassroomTimeLimit}
+          onChangeNewClassroomPresetupCode={handleChangeNewClassroomPresetupCode}
           onClearClassroomCodes={handleClearClassroomCodes}
           onCreateClassroom={handleCreateClassroom}
           onDeleteClassroom={handleDeleteClassroom}
           onRemoveEditingTask={handleRemoveEditingTask}
           onDeleteManagedUser={handleDeleteManagedUser}
           onEditClassroom={handleBeginEditClassroom}
+          onToggleClassroom={handleToggleClassroom}
+          onSetAllUsersActiveStatus={handleSetAllUsersActiveStatus}
           onPreviewUserCode={handlePreviewUserCode}
           onRefresh={handleRefreshClassrooms}
           onSaveManagedUser={handleSaveManagedUser}
