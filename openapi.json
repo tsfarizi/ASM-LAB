@@ -711,6 +711,10 @@
           "name",
           "languageLocked",
           "users",
+          "isExam",
+          "testCode",
+          "timeLimit",
+          "presetupCode",
           "createdAt",
           "updatedAt"
         ],
@@ -723,10 +727,16 @@
             "type": "integer",
             "format": "int32"
           },
+          "isExam": {
+            "type": "boolean"
+          },
           "languageLocked": {
             "type": "boolean"
           },
           "name": {
+            "type": "string"
+          },
+          "presetupCode": {
             "type": "string"
           },
           "programmingLanguage": {
@@ -738,6 +748,13 @@
             "items": {
               "type": "string"
             }
+          },
+          "testCode": {
+            "type": "string"
+          },
+          "timeLimit": {
+            "type": "integer",
+            "format": "int64"
           },
           "updatedAt": {
             "type": "string",
@@ -772,12 +789,20 @@
           "name"
         ],
         "properties": {
+          "isExam": {
+            "type": "boolean",
+            "nullable": true
+          },
           "lockLanguage": {
             "type": "boolean",
             "nullable": true
           },
           "name": {
             "type": "string"
+          },
+          "presetupCode": {
+            "type": "string",
+            "nullable": true
           },
           "programmingLanguage": {
             "type": "string",
@@ -788,6 +813,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "testCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeLimit": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
           },
           "users": {
             "type": "array",
@@ -910,11 +944,19 @@
       "UpdateClassroomRequest": {
         "type": "object",
         "properties": {
+          "isExam": {
+            "type": "boolean",
+            "nullable": true
+          },
           "lockLanguage": {
             "type": "boolean",
             "nullable": true
           },
           "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "presetupCode": {
             "type": "string",
             "nullable": true
           },
@@ -929,6 +971,15 @@
             },
             "nullable": true
           },
+          "testCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeLimit": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
           "users": {
             "type": "array",
             "items": {
@@ -941,6 +992,10 @@
       "UpdateUserRequest": {
         "type": "object",
         "properties": {
+          "active": {
+            "type": "boolean",
+            "nullable": true
+          },
           "code": {
             "type": "string",
             "nullable": true
@@ -962,10 +1017,14 @@
           "name",
           "npm",
           "code",
+          "active",
           "createdAt",
           "updatedAt"
         ],
         "properties": {
+          "active": {
+            "type": "boolean"
+          },
           "code": {
             "type": "string"
           },
