@@ -355,8 +355,8 @@ export const IndexPage = () => {
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
-      const nextValue = event.target.value;
       setCode(nextValue);
+      setLastCode(nextValue);
 
       if (isBrowser && !isPreviewMode) {
         window.localStorage.setItem(codeStorageKey, nextValue);
@@ -389,6 +389,7 @@ export const IndexPage = () => {
       const nextValue = `${code.slice(0, selectionStart)}${indent}${code.slice(selectionEnd)}`;
 
       setCode(nextValue);
+      setLastCode(nextValue);
 
       if (isBrowser && !isPreviewMode) {
         window.localStorage.setItem(codeStorageKey, nextValue);
@@ -580,7 +581,7 @@ export const IndexPage = () => {
   );
 
   const handleFinishExam = useCallback(async () => {
-    if (!isExamMode || !classroom?.id || !account?.npm) return;
+    if (!isExamMode || !classroom?.id || !account?.npm || account.npm.trim() === '') return;
 
     try {
       await fetch(`${API_BASE_URL}/api/classrooms/${classroom.id}/finish`, {

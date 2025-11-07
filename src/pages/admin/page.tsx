@@ -13,14 +13,77 @@ import { AdminLoginPrompt } from "./components/AdminLoginPrompt";
 import { ClassroomSection } from "./components/ClassroomSection";
 import { FirstAdminRegistration } from "./components/FirstAdminRegistration";
 import { roleLabel } from "./utils";
-import {
-  ApiAccount,
-  ApiClassroom,
-  ClassroomUserForm,
-  CreateClassroomPayload,
-  ManagedUserForm,
-  UpdateClassroomPayload,
-} from "./types";
+
+export type ApiAccount = {
+  id: number;
+  npm: string;
+  role: "admin" | "user";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiUser = {
+  id: number;
+  name: string;
+  npm: string;
+  code: string;
+  active: boolean;
+  examStartedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiClassroom = {
+  id: number;
+  name: string;
+  programmingLanguage: string;
+  languageLocked: boolean;
+  users: ApiUser[];
+  tasks: string[];
+  isExam: boolean;
+  testCode: string;
+  examStart: string | null;
+  examEnd: string | null;
+  presetupCode: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClassroomUserForm = {
+  name: string;
+  npm: string;
+};
+
+export type ManagedUserForm = {
+  name: string;
+  npm: string;
+  active: boolean;
+};
+
+export type CreateClassroomPayload = {
+  name: string;
+  programmingLanguage?: string;
+  lockLanguage: boolean;
+  tasks: string[];
+  isExam: boolean;
+  testCode: string;
+  examStart?: string | null;
+  examEnd?: string | null;
+  presetupCode: string;
+};
+
+export type UpdateClassroomPayload = {
+  name: string;
+  programmingLanguage: string | null;
+  lockLanguage: boolean;
+  tasks: string[];
+  isExam: boolean;
+  testCode: string;
+  examStart?: string | null;
+  examEnd?: string | null;
+  presetupCode: string;
+};
+
 
 type AdminExistsResponse = {
   exists: boolean;
@@ -58,8 +121,12 @@ export const AdminPage = () => {
   const [newClassroomTasks, setNewClassroomTasks] = useState<string[]>([""]);
   const [newClassroomIsExam, setNewClassroomIsExam] = useState(false);
   const [newClassroomTestCode, setNewClassroomTestCode] = useState("");
-  const [newClassroomTimeLimit, setNewClassroomTimeLimit] = useState(0);
   const [newClassroomPresetupCode, setNewClassroomPresetupCode] = useState("");
+  const [newClassroomExamDate, setNewClassroomExamDate] = useState("");
+  const [newClassroomExamStartHour, setNewClassroomExamStartHour] = useState("");
+  const [newClassroomExamStartMinute, setNewClassroomExamStartMinute] = useState("");
+  const [newClassroomExamEndHour, setNewClassroomExamEndHour] = useState("");
+  const [newClassroomExamEndMinute, setNewClassroomExamEndMinute] = useState("");
   const [classroomFormError, setClassroomFormError] = useState<string | null>(null);
   const [classroomActionError, setClassroomActionError] = useState<string | null>(null);
   const [isCreatingClassroom, setIsCreatingClassroom] = useState(false);
@@ -70,8 +137,12 @@ export const AdminPage = () => {
   const [editingTasks, setEditingTasks] = useState<string[]>([]);
   const [editingIsExam, setEditingIsExam] = useState(false);
   const [editingTestCode, setEditingTestCode] = useState("");
-  const [editingTimeLimit, setEditingTimeLimit] = useState(0);
   const [editingPresetupCode, setEditingPresetupCode] = useState("");
+  const [editingExamDate, setEditingExamDate] = useState("");
+  const [editingExamStartHour, setEditingExamStartHour] = useState("");
+  const [editingExamStartMinute, setEditingExamStartMinute] = useState("");
+  const [editingExamEndHour, setEditingExamEndHour] = useState("");
+  const [editingExamEndMinute, setEditingExamEndMinute] = useState("");
   const [editingError, setEditingError] = useState<string | null>(null);
   const [isSavingClassroom, setIsSavingClassroom] = useState(false);
   const [deletingClassroomId, setDeletingClassroomId] = useState<number | null>(null);
@@ -286,13 +357,17 @@ export const AdminPage = () => {
       .map((task) => task.trim())
       .filter((task) => task.length > 0);
 
+    const examStart = newClassroomExamDate && newClassroomExamStartHour && newClassroomExamStartMinute ? new Date(`${newClassroomExamDate}T${newClassroomExamStartHour}:${newClassroomExamStartMinute}:00.000+07:00`).toISOString() : null;
+    const examEnd = newClassroomExamDate && newClassroomExamEndHour && newClassroomExamEndMinute ? new Date(`${newClassroomExamDate}T${newClassroomExamEndHour}:${newClassroomExamEndMinute}:00.000+07:00`).toISOString() : null;
+
     const payload: CreateClassroomPayload = {
       name: trimmedName,
       lockLanguage: selectedLanguage ? newClassroomLockLanguage : false,
       tasks: trimmedTasks,
       isExam: newClassroomIsExam,
       testCode: newClassroomTestCode,
-      timeLimit: newClassroomTimeLimit,
+      examStart,
+      examEnd,
       presetupCode: newClassroomPresetupCode,
     };
 
@@ -323,7 +398,6 @@ export const AdminPage = () => {
       setNewClassroomTasks([""]);
       setNewClassroomIsExam(false);
       setNewClassroomTestCode("");
-      setNewClassroomTimeLimit(0);
       setNewClassroomPresetupCode("");
       await fetchClassrooms();
     } catch (error) {
@@ -346,7 +420,17 @@ export const AdminPage = () => {
     setEditingTasks(classroom.tasks.length > 0 ? [...classroom.tasks] : [""]);
     setEditingIsExam(classroom.isExam);
     setEditingTestCode(classroom.testCode);
-    setEditingTimeLimit(classroom.timeLimit);
+    if (classroom.examStart) {
+      const startDate = new Date(classroom.examStart);
+      setEditingExamDate(startDate.toISOString().split('T')[0]);
+      setEditingExamStartHour(startDate.getHours().toString().padStart(2, '0'));
+      setEditingExamStartMinute(startDate.getMinutes().toString().padStart(2, '0'));
+    }
+    if (classroom.examEnd) {
+      const endDate = new Date(classroom.examEnd);
+      setEditingExamEndHour(endDate.getHours().toString().padStart(2, '0'));
+      setEditingExamEndMinute(endDate.getMinutes().toString().padStart(2, '0'));
+    }
     setEditingPresetupCode(classroom.presetupCode);
   };
 
@@ -361,7 +445,6 @@ export const AdminPage = () => {
     setEditingTasks([]);
     setEditingIsExam(false);
     setEditingTestCode("");
-    setEditingTimeLimit(0);
     setEditingPresetupCode("");
     setClassroomActionError(null);
     setEditingError(null);
@@ -384,6 +467,9 @@ export const AdminPage = () => {
       .map((task) => task.trim())
       .filter((task) => task.length > 0);
 
+    const examStart = editingExamDate && editingExamStartHour && editingExamStartMinute ? new Date(`${editingExamDate}T${editingExamStartHour}:${editingExamStartMinute}:00.000+07:00`).toISOString() : null;
+    const examEnd = editingExamDate && editingExamEndHour && editingExamEndMinute ? new Date(`${editingExamDate}T${editingExamEndHour}:${editingExamEndMinute}:00.000+07:00`).toISOString() : null;
+
     const payload: UpdateClassroomPayload = {
       name: trimmedName,
       programmingLanguage: selectedLanguage ? selectedLanguage.name : null,
@@ -391,7 +477,8 @@ export const AdminPage = () => {
       tasks: trimmedTasks,
       isExam: editingIsExam,
       testCode: editingTestCode,
-      timeLimit: editingTimeLimit,
+      examStart,
+      examEnd,
       presetupCode: editingPresetupCode,
     };
 
@@ -882,9 +969,7 @@ export const AdminPage = () => {
     setNewClassroomTestCode(value);
   };
 
-  const handleChangeNewClassroomTimeLimit = (value: string) => {
-    setNewClassroomTimeLimit(Number(value) || 0);
-  };
+  
 
   const handleToggleEditingIsExam = (value: boolean) => {
     setEditingIsExam(value);
@@ -894,9 +979,7 @@ export const AdminPage = () => {
     setEditingTestCode(value);
   };
 
-  const handleChangeEditingTimeLimit = (value: string) => {
-    setEditingTimeLimit(Number(value) || 0);
-  };
+  
 
   const handleChangeNewClassroomPresetupCode = (value: string) => {
     setNewClassroomPresetupCode(value);
@@ -904,6 +987,46 @@ export const AdminPage = () => {
 
   const handleChangeEditingPresetupCode = (value: string) => {
     setEditingPresetupCode(value);
+  };
+
+  const handleChangeNewClassroomExamDate = (value: string) => {
+    setNewClassroomExamDate(value);
+  };
+
+  const handleChangeNewClassroomExamStartHour = (value: string) => {
+    setNewClassroomExamStartHour(value);
+  };
+
+  const handleChangeNewClassroomExamStartMinute = (value: string) => {
+    setNewClassroomExamStartMinute(value);
+  };
+
+  const handleChangeNewClassroomExamEndHour = (value: string) => {
+    setNewClassroomExamEndHour(value);
+  };
+
+  const handleChangeNewClassroomExamEndMinute = (value: string) => {
+    setNewClassroomExamEndMinute(value);
+  };
+
+  const handleChangeEditingExamDate = (value: string) => {
+    setEditingExamDate(value);
+  };
+
+  const handleChangeEditingExamStartHour = (value: string) => {
+    setEditingExamStartHour(value);
+  };
+
+  const handleChangeEditingExamStartMinute = (value: string) => {
+    setEditingExamStartMinute(value);
+  };
+
+  const handleChangeEditingExamEndHour = (value: string) => {
+    setEditingExamEndHour(value);
+  };
+
+  const handleChangeEditingExamEndMinute = (value: string) => {
+    setEditingExamEndMinute(value);
   };
 
   const handleChangeNewAccountNpm = (value: string) => {
@@ -1073,8 +1196,12 @@ export const AdminPage = () => {
           editingTasks={editingTasks}
           editingIsExam={editingIsExam}
           editingTestCode={editingTestCode}
-          editingTimeLimit={editingTimeLimit}
           editingPresetupCode={editingPresetupCode}
+          editingExamDate={editingExamDate}
+          editingExamStartHour={editingExamStartHour}
+          editingExamStartMinute={editingExamStartMinute}
+          editingExamEndHour={editingExamEndHour}
+          editingExamEndMinute={editingExamEndMinute}
           isCreatingClassroom={isCreatingClassroom}
           isLoading={isClassroomLoading}
           isRefreshing={isRefreshing}
@@ -1089,8 +1216,12 @@ export const AdminPage = () => {
           newClassroomTasks={newClassroomTasks}
           newClassroomIsExam={newClassroomIsExam}
           newClassroomTestCode={newClassroomTestCode}
-          newClassroomTimeLimit={newClassroomTimeLimit}
           newClassroomPresetupCode={newClassroomPresetupCode}
+          newClassroomExamDate={newClassroomExamDate}
+          newClassroomExamStartHour={newClassroomExamStartHour}
+          newClassroomExamStartMinute={newClassroomExamStartMinute}
+          newClassroomExamEndHour={newClassroomExamEndHour}
+          newClassroomExamEndMinute={newClassroomExamEndMinute}
           onAddUserToClassroom={handleAddUserToClassroom}
           onAddEditingTask={handleAddEditingTask}
           onAddNewClassroomTask={handleAddNewClassroomTask}
@@ -1101,16 +1232,24 @@ export const AdminPage = () => {
           onChangeEditingTask={handleChangeEditingTask}
           onChangeEditingIsExam={handleToggleEditingIsExam}
           onChangeEditingTestCode={handleChangeEditingTestCode}
-          onChangeEditingTimeLimit={handleChangeEditingTimeLimit}
           onChangeEditingPresetupCode={handleChangeEditingPresetupCode}
+          onChangeEditingExamDate={handleChangeEditingExamDate}
+          onChangeEditingExamStartHour={handleChangeEditingExamStartHour}
+          onChangeEditingExamStartMinute={handleChangeEditingExamStartMinute}
+          onChangeEditingExamEndHour={handleChangeEditingExamEndHour}
+          onChangeEditingExamEndMinute={handleChangeEditingExamEndMinute}
           onChangeManagedUserForm={handleChangeManagedUserForm}
           onChangeNewClassroomLanguage={handleChangeNewClassroomLanguage}
           onChangeNewClassroomName={handleChangeNewClassroomName}
           onChangeNewClassroomTask={handleChangeNewClassroomTask}
           onChangeNewClassroomIsExam={handleToggleNewClassroomIsExam}
           onChangeNewClassroomTestCode={handleChangeNewClassroomTestCode}
-          onChangeNewClassroomTimeLimit={handleChangeNewClassroomTimeLimit}
           onChangeNewClassroomPresetupCode={handleChangeNewClassroomPresetupCode}
+          onChangeNewClassroomExamDate={handleChangeNewClassroomExamDate}
+          onChangeNewClassroomExamStartHour={handleChangeNewClassroomExamStartHour}
+          onChangeNewClassroomExamStartMinute={handleChangeNewClassroomExamStartMinute}
+          onChangeNewClassroomExamEndHour={handleChangeNewClassroomExamEndHour}
+          onChangeNewClassroomExamEndMinute={handleChangeNewClassroomExamEndMinute}
           onClearClassroomCodes={handleClearClassroomCodes}
           onCreateClassroom={handleCreateClassroom}
           onDeleteClassroom={handleDeleteClassroom}

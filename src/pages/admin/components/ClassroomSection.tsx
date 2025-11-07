@@ -19,8 +19,12 @@ type ClassroomSectionProps = {
   newClassroomTasks: string[];
   newClassroomIsExam: boolean;
   newClassroomTestCode: string;
-  newClassroomTimeLimit: number;
   newClassroomPresetupCode: string;
+  newClassroomExamDate: string;
+  newClassroomExamStartHour: string;
+  newClassroomExamStartMinute: string;
+  newClassroomExamEndHour: string;
+  newClassroomExamEndMinute: string;
   classroomFormError: string | null;
   classroomActionError: string | null;
   classroomError: string | null;
@@ -32,8 +36,12 @@ type ClassroomSectionProps = {
   editingTasks: string[];
   editingIsExam: boolean;
   editingTestCode: string;
-  editingTimeLimit: number;
   editingPresetupCode: string;
+  editingExamDate: string;
+  editingExamStartHour: string;
+  editingExamStartMinute: string;
+  editingExamEndHour: string;
+  editingExamEndMinute: string;
   editingError: string | null;
   isSavingClassroom: boolean;
   deletingClassroomId: number | null;
@@ -54,8 +62,12 @@ type ClassroomSectionProps = {
   onToggleNewClassroomLock: (value: boolean) => void;
   onChangeNewClassroomIsExam: (value: boolean) => void;
   onChangeNewClassroomTestCode: (value: string) => void;
-  onChangeNewClassroomTimeLimit: (value: string) => void;
   onChangeNewClassroomPresetupCode: (value: string) => void;
+  onChangeNewClassroomExamDate: (value: string) => void;
+  onChangeNewClassroomExamStartHour: (value: string) => void;
+  onChangeNewClassroomExamStartMinute: (value: string) => void;
+  onChangeNewClassroomExamEndHour: (value: string) => void;
+  onChangeNewClassroomExamEndMinute: (value: string) => void;
   onEditClassroom: (classroom: ApiClassroom) => void;
   onCancelEditClassroom: () => void;
   onUpdateClassroom: () => void;
@@ -65,8 +77,12 @@ type ClassroomSectionProps = {
   onToggleEditingLockLanguage: (value: boolean) => void;
   onChangeEditingIsExam: (value: boolean) => void;
   onChangeEditingTestCode: (value: string) => void;
-  onChangeEditingTimeLimit: (value: string) => void;
   onChangeEditingPresetupCode: (value: string) => void;
+  onChangeEditingExamDate: (value: string) => void;
+  onChangeEditingExamStartHour: (value: string) => void;
+  onChangeEditingExamStartMinute: (value: string) => void;
+  onChangeEditingExamEndHour: (value: string) => void;
+  onChangeEditingExamEndMinute: (value: string) => void;
   onChangeNewClassroomTask: (index: number, value: string) => void;
   onAddNewClassroomTask: () => void;
   onRemoveNewClassroomTask: (index: number) => void;
@@ -102,8 +118,12 @@ export const ClassroomSection = ({
   newClassroomTasks,
   newClassroomIsExam,
   newClassroomTestCode,
-  newClassroomTimeLimit,
   newClassroomPresetupCode,
+  newClassroomExamDate,
+  newClassroomExamStartHour,
+  newClassroomExamStartMinute,
+  newClassroomExamEndHour,
+  newClassroomExamEndMinute,
   classroomFormError,
   classroomActionError,
   classroomError,
@@ -115,8 +135,12 @@ export const ClassroomSection = ({
   editingTasks,
   editingIsExam,
   editingTestCode,
-  editingTimeLimit,
   editingPresetupCode,
+  editingExamDate,
+  editingExamStartHour,
+  editingExamStartMinute,
+  editingExamEndHour,
+  editingExamEndMinute,
   editingError,
   isSavingClassroom,
   deletingClassroomId,
@@ -139,6 +163,11 @@ export const ClassroomSection = ({
   onChangeNewClassroomTestCode,
   onChangeNewClassroomTimeLimit,
   onChangeNewClassroomPresetupCode,
+  onChangeNewClassroomExamDate,
+  onChangeNewClassroomExamStartHour,
+  onChangeNewClassroomExamStartMinute,
+  onChangeNewClassroomExamEndHour,
+  onChangeNewClassroomExamEndMinute,
   onEditClassroom,
   onCancelEditClassroom,
   onUpdateClassroom,
@@ -150,6 +179,11 @@ export const ClassroomSection = ({
   onChangeEditingTestCode,
   onChangeEditingTimeLimit,
   onChangeEditingPresetupCode,
+  onChangeEditingExamDate,
+  onChangeEditingExamStartHour,
+  onChangeEditingExamStartMinute,
+  onChangeEditingExamEndHour,
+  onChangeEditingExamEndMinute,
   onChangeNewClassroomTask,
   onAddNewClassroomTask,
   onRemoveNewClassroomTask,
@@ -345,9 +379,9 @@ export const ClassroomSection = ({
                   <p className="text-xs text-default-500 dark:text-default-300">
                     Status bahasa: {languageStatus}
                   </p>
-                  {classroom.isExam ? (
+                  {classroom.isExam && classroom.examStart && classroom.examEnd ? (
                     <p className="text-xs font-semibold text-primary-600 dark:text-primary-400">
-                      Ujian Aktif ({classroom.timeLimit} menit)
+                      Ujian: {formatDateTime(classroom.examStart)} - {formatDateTime(classroom.examEnd)}
                     </p>
                   ) : null}
                 </div>
@@ -529,24 +563,107 @@ export const ClassroomSection = ({
                         </label>
                         {editingIsExam && (
                           <>
-                            <div className="flex flex-col gap-2">
-                              <label
-                                className="text-sm font-medium text-default-700 dark:text-default-200"
-                                htmlFor={`editing-time-limit-${classroom.id}`}
-                              >
-                                Waktu Ujian (menit)
-                              </label>
-                              <input
-                                className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
-                                disabled={isSavingClassroom}
-                                id={`editing-time-limit-${classroom.id}`}
-                                placeholder="Contoh: 120"
-                                type="number"
-                                value={editingTimeLimit}
-                                onChange={(event) =>
-                                  onChangeEditingTimeLimit(event.target.value)
-                                }
-                              />
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div className="flex flex-col gap-2">
+                                <label
+                                  className="text-sm font-medium text-default-700 dark:text-default-200"
+                                  htmlFor={`editing-exam-date-${classroom.id}`}
+                                >
+                                  Tanggal Ujian
+                                </label>
+                                <input
+                                  className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                  disabled={isSavingClassroom}
+                                  id={`editing-exam-date-${classroom.id}`}
+                                  type="date"
+                                  value={editingExamDate}
+                                  onChange={(event) =>
+                                    onChangeEditingExamDate(event.target.value)
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div className="flex flex-col gap-2">
+                                <label
+                                  className="text-sm font-medium text-default-700 dark:text-default-200"
+                                  htmlFor={`editing-exam-start-hour-${classroom.id}`}
+                                >
+                                  Waktu Mulai
+                                </label>
+                                <div className="flex gap-2">
+                                  <select
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    disabled={isSavingClassroom}
+                                    id={`editing-exam-start-hour-${classroom.id}`}
+                                    value={editingExamStartHour}
+                                    onChange={(event) =>
+                                      onChangeEditingExamStartHour(event.target.value)
+                                    }
+                                  >
+                                    {Array.from({ length: 24 }, (_, i) => (
+                                      <option key={i} value={i.toString().padStart(2, '0')}>
+                                        {i.toString().padStart(2, '0')}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    disabled={isSavingClassroom}
+                                    id={`editing-exam-start-minute-${classroom.id}`}
+                                    value={editingExamStartMinute}
+                                    onChange={(event) =>
+                                      onChangeEditingExamStartMinute(event.target.value)
+                                    }
+                                  >
+                                    {Array.from({ length: 12 }, (_, i) => (
+                                      <option key={i} value={(i * 5).toString().padStart(2, '0')}>
+                                        {(i * 5).toString().padStart(2, '0')}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <label
+                                  className="text-sm font-medium text-default-700 dark:text-default-200"
+                                  htmlFor={`editing-exam-end-hour-${classroom.id}`}
+                                >
+                                  Waktu Selesai
+                                </label>
+                                <div className="flex gap-2">
+                                  <select
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    disabled={isSavingClassroom}
+                                    id={`editing-exam-end-hour-${classroom.id}`}
+                                    value={editingExamEndHour}
+                                    onChange={(event) =>
+                                      onChangeEditingExamEndHour(event.target.value)
+                                    }
+                                  >
+                                    {Array.from({ length: 24 }, (_, i) => (
+                                      <option key={i} value={i.toString().padStart(2, '0')}>
+                                        {i.toString().padStart(2, '0')}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    disabled={isSavingClassroom}
+                                    id={`editing-exam-end-minute-${classroom.id}`}
+                                    value={editingExamEndMinute}
+                                    onChange={(event) =>
+                                      onChangeEditingExamEndMinute(event.target.value)
+                                    }
+                                  >
+                                    {Array.from({ length: 12 }, (_, i) => (
+                                      <option key={i} value={(i * 5).toString().padStart(2, '0')}>
+                                        {(i * 5).toString().padStart(2, '0')}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
                             </div>
                             <div className="flex flex-col gap-2">
                               <label
@@ -977,24 +1094,107 @@ export const ClassroomSection = ({
             </label>
             {newClassroomIsExam && (
               <>
-                <div className="flex flex-col gap-2">
-                  <label
-                    className="text-sm font-medium text-default-700 dark:text-default-200"
-                    htmlFor="new-classroom-time-limit"
-                  >
-                    Waktu Ujian (menit)
-                  </label>
-                  <input
-                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
-                    disabled={isCreatingClassroom}
-                    id="new-classroom-time-limit"
-                    placeholder="Contoh: 120"
-                    type="number"
-                    value={newClassroomTimeLimit}
-                    onChange={(event) =>
-                      onChangeNewClassroomTimeLimit(event.target.value)
-                    }
-                  />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-sm font-medium text-default-700 dark:text-default-200"
+                      htmlFor="new-classroom-exam-date"
+                    >
+                      Tanggal Ujian
+                    </label>
+                    <input
+                      className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                      disabled={isCreatingClassroom}
+                      id="new-classroom-exam-date"
+                      type="date"
+                      value={newClassroomExamDate}
+                      onChange={(event) =>
+                        onChangeNewClassroomExamDate(event.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-sm font-medium text-default-700 dark:text-default-200"
+                      htmlFor="new-classroom-exam-start-hour"
+                    >
+                      Waktu Mulai
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={isCreatingClassroom}
+                        id="new-classroom-exam-start-hour"
+                        value={newClassroomExamStartHour}
+                        onChange={(event) =>
+                          onChangeNewClassroomExamStartHour(event.target.value)
+                        }
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i.toString().padStart(2, '0')}>
+                            {i.toString().padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={isCreatingClassroom}
+                        id="new-classroom-exam-start-minute"
+                        value={newClassroomExamStartMinute}
+                        onChange={(event) =>
+                          onChangeNewClassroomExamStartMinute(event.target.value)
+                        }
+                      >
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <option key={i} value={(i * 5).toString().padStart(2, '0')}>
+                            {(i * 5).toString().padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-sm font-medium text-default-700 dark:text-default-200"
+                      htmlFor="new-classroom-exam-end-hour"
+                    >
+                      Waktu Selesai
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={isCreatingClassroom}
+                        id="new-classroom-exam-end-hour"
+                        value={newClassroomExamEndHour}
+                        onChange={(event) =>
+                          onChangeNewClassroomExamEndHour(event.target.value)
+                        }
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i.toString().padStart(2, '0')}>
+                            {i.toString().padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        disabled={isCreatingClassroom}
+                        id="new-classroom-exam-end-minute"
+                        value={newClassroomExamEndMinute}
+                        onChange={(event) =>
+                          onChangeNewClassroomExamEndMinute(event.target.value)
+                        }
+                      >
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <option key={i} value={(i * 5).toString().padStart(2, '0')}>
+                            {(i * 5).toString().padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label

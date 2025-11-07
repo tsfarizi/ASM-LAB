@@ -81,6 +81,8 @@ type AuthContextValue = {
   isTimeUp: boolean;
   enterFullscreen: () => void;
   setIsTimeUp: (value: boolean) => void;
+  lastCode: string;
+  setLastCode: (code: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -183,6 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AuthState>({ account: null, classroom: null });
   const [isLoading, setIsLoading] = useState(true);
   const [isTimeUp, setIsTimeUp] = useState(false);
+  const [lastCode, setLastCode] = useState("");
 
   const isExamMode = useMemo(
     () => state.classroom?.isExam ?? false,
@@ -347,6 +350,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isTimeUp,
       enterFullscreen,
       setIsTimeUp,
+      lastCode,
+      setLastCode,
     }),
     [state.account, state.classroom, isLoading, login, logout, syncAccount, syncClassroom, isExamMode, isTimeUp, enterFullscreen],
   );
