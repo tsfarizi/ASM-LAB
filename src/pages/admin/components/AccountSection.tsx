@@ -39,16 +39,16 @@ export const AccountSection = ({
   isExpanded,
   onToggle,
 }: AccountSectionProps) => (
-  <section className="space-y-4 rounded-3xl border border-default-200 bg-default-50 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-default-50/10">
+  <section className="space-y-4 rounded-3xl border border-default-200 bg-content1 p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.35)] dark:border-default-100/40 dark:bg-content1/10">
     <div
       className="flex cursor-pointer flex-wrap items-center justify-between gap-3"
       onClick={onToggle}
     >
       <div>
-        <h2 className="text-xl font-semibold text-default-900 dark:text-default-50">
+        <h2 className="text-xl font-semibold text-foreground dark:text-default-50">
           Manajemen Akun
         </h2>
-        <p className="text-sm text-default-600 dark:text-default-200">
+        <p className="text-sm text-foreground dark:text-default-200">
           Kelola akun yang dapat mengakses sistem, termasuk promosi menjadi
           admin.
         </p>
@@ -73,20 +73,20 @@ export const AccountSection = ({
 
     {isExpanded && (
       <>
-        <div className="rounded-2xl border border-default-200 bg-default-100/40 p-5 dark:border-default-100/40 dark:bg-default-100/10">
-          <h3 className="text-sm font-semibold text-default-700 dark:text-default-200">
+        <div className="rounded-2xl border border-default-200 bg-content1/40 p-5 dark:border-default-100/40 dark:bg-content1/10">
+          <h3 className="text-sm font-semibold text-foreground dark:text-default-200">
             Tambah Akun
           </h3>
           <div className="mt-4 flex flex-col gap-3 md:flex-row">
             <input
-              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              className="w-full rounded-2xl border border-default-200 bg-content1 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-content1/20 dark:text-default-200"
               disabled={isSavingAccount}
               placeholder="NPM"
               value={newAccountNpm}
               onChange={(event) => onChangeNewAccountNpm(event.target.value)}
             />
             <select
-              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200 md:w-40"
+              className="w-full rounded-2xl border border-default-200 bg-content1 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-content1/20 dark:text-default-200 md:w-40"
               disabled={isSavingAccount}
               value={newAccountRole}
               onChange={(event: ChangeEvent<HTMLSelectElement>) =>
@@ -119,17 +119,17 @@ export const AccountSection = ({
         ) : null}
 
         {isAccountsLoading ? (
-          <div className="rounded-2xl border border-default-200 bg-default-100 px-4 py-6 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
+          <div className="rounded-2xl border border-default-200 bg-content1 px-4 py-6 text-center text-sm text-foreground dark:border-default-100/40 dark:bg-content1/15 dark:text-default-300">
             Memuat data akun...
           </div>
         ) : accounts.length === 0 ? (
-          <div className="rounded-2xl border border-default-200 bg-default-100 px-4 py-6 text-center text-sm text-default-600 dark:border-default-100/40 dark:bg-default-100/15 dark:text-default-300">
+          <div className="rounded-2xl border border-default-200 bg-content1 px-4 py-6 text-center text-sm text-foreground dark:border-default-100/40 dark:bg-content1/15 dark:text-default-300">
             Belum ada akun yang terdaftar.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-default-200 text-sm text-default-700 dark:divide-default-100/20 dark:text-default-200">
-              <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-300">
+            <table className="min-w-full divide-y divide-default-200 text-sm text-foreground dark:divide-default-100/20 dark:text-default-200">
+              <thead className="bg-content1 text-xs uppercase text-default-500 dark:bg-content1/20 dark:text-default-300">
                 <tr>
                   <th className="px-3 py-2 text-left font-semibold">NPM</th>
                   <th className="px-3 py-2 text-left font-semibold">Role</th>
@@ -141,12 +141,12 @@ export const AccountSection = ({
               <tbody className="divide-y divide-default-200 dark:divide-default-100/20">
                 {accounts.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-3 py-2 font-medium text-default-800 dark:text-default-100">
+                    <td className="px-3 py-2 font-medium text-foreground dark:text-default-100">
                       {item.npm}
                     </td>
-                    <td className="px-3 py-2 text-default-600 dark:text-default-300">
+                    <td className="px-3 py-2 text-foreground dark:text-default-300">
                       <select
-                        className="rounded-xl border border-default-200 bg-default-50 px-3 py-1 text-sm dark:border-default-100/40 dark:bg-default-50/10"
+                        className="rounded-xl border border-default-200 bg-content1 px-3 py-1 text-sm dark:border-default-100/40 dark:bg-content1/10"
                         value={item.role}
                         onChange={(event) =>
                           onUpdateRole(

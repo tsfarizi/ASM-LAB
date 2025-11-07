@@ -21,9 +21,9 @@ export const FullscreenExitModal = ({ isOpen, onConfirm, onCancel, type }: Fulls
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="rounded-2xl bg-white p-8 dark:bg-default-800">
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <p className="mt-4 text-lg">{message}</p>
+      <div className="rounded-2xl bg-white p-8 text-default-900 dark:bg-default-800 dark:text-default-100">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h2>
+        <p className="mt-4 text-lg text-gray-900 dark:text-white">{message}</p>
         <div className="mt-6 flex justify-end gap-4">
           <button onClick={onCancel} className="rounded-2xl bg-default-200 px-6 py-3 font-semibold text-default-800 dark:bg-default-700 dark:text-default-200">
             {cancelButtonLabel}

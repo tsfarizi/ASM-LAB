@@ -217,7 +217,7 @@ export const ClassroomSection = ({
     disabled: boolean,
   ) => (
     <select
-      className="min-w-[220px] rounded-2xl border border-default-200 bg-white px-4 py-2 text-sm text-default-700 shadow-sm transition hover:border-default-300 focus:border-primary focus:outline-none dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-200"
+      className="min-w-[220px] rounded-2xl border border-default-200 bg-content1 px-4 py-2 text-sm text-foreground shadow-sm transition hover:border-default-300 focus:border-primary focus:outline-none dark:border-default-100/40 dark:bg-default-100/10 dark:text-default-200"
       disabled={disabled}
       id={selectId}
       value={selectedId ?? ""}
@@ -277,7 +277,7 @@ export const ClassroomSection = ({
                 className="flex flex-col gap-2 sm:flex-row sm:items-center"
               >
                 <input
-                  className="w-full flex-1 rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                  className="w-full flex-1 rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                   disabled={disabled}
                   id={inputId}
                   placeholder={`Tugas ke-${index + 1}`}
@@ -425,13 +425,13 @@ export const ClassroomSection = ({
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="flex flex-col gap-2">
                         <label
-                          className="text-sm font-medium text-default-700 dark:text-default-200"
+                          className="text-sm font-medium text-foreground dark:text-default-200"
                           htmlFor={editingNameInputId}
                         >
                           Nama Classroom
                         </label>
                         <input
-                          className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                          className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                           disabled={isSavingClassroom}
                           id={editingNameInputId}
                           value={editingName}
@@ -442,7 +442,7 @@ export const ClassroomSection = ({
                       </div>
                       <div className="flex flex-col gap-2">
                         <label
-                          className="text-sm font-medium text-default-700 dark:text-default-200"
+                          className="text-sm font-medium text-foreground dark:text-default-200"
                           htmlFor={`editing-language-${classroom.id}`}
                         >
                           Bahasa Pemrograman
@@ -461,13 +461,13 @@ export const ClassroomSection = ({
                     </div>
                     <div className="flex flex-col gap-2">
                       <label
-                        className="text-sm font-medium text-default-700 dark:text-default-200"
+                        className="text-sm font-medium text-foreground dark:text-default-200"
                         htmlFor={`editing-presetup-code-${classroom.id}`}
                       >
                         Kode Awal (Presetup)
                       </label>
                       <textarea
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={isSavingClassroom}
                         id={`editing-presetup-code-${classroom.id}`}
                         placeholder="Kode yang akan muncul di editor user saat login"
@@ -530,7 +530,7 @@ export const ClassroomSection = ({
                       </div>
                     ) : null}
                     <div className="space-y-3 rounded-2xl border border-default-200 bg-default-100/50 p-4 dark:border-default-100/40 dark:bg-default-100/10">
-                      <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+                      <h4 className="text-sm font-semibold text-foreground dark:text-default-200">
                         Daftar Tugas Classroom
                       </h4>
                       {renderTaskEditor(`editing-task-${classroom.id}`, editingTasks, {
@@ -541,7 +541,7 @@ export const ClassroomSection = ({
                       })}
                     </div>
                     <div className="space-y-3 rounded-2xl border border-default-200 bg-default-100/50 p-4 dark:border-default-100/40 dark:bg-default-100/10">
-                      <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+                      <h4 className="text-sm font-semibold text-foreground dark:text-default-200">
                         Pengaturan Ujian
                       </h4>
                       <div className="flex flex-col gap-3">
@@ -566,13 +566,13 @@ export const ClassroomSection = ({
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div className="flex flex-col gap-2">
                                 <label
-                                  className="text-sm font-medium text-default-700 dark:text-default-200"
+                                  className="text-sm font-medium text-foreground dark:text-default-200"
                                   htmlFor={`editing-exam-date-${classroom.id}`}
                                 >
                                   Tanggal Ujian
                                 </label>
                                 <input
-                                  className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                  className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                                   disabled={isSavingClassroom}
                                   id={`editing-exam-date-${classroom.id}`}
                                   type="date"
@@ -586,14 +586,14 @@ export const ClassroomSection = ({
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div className="flex flex-col gap-2">
                                 <label
-                                  className="text-sm font-medium text-default-700 dark:text-default-200"
+                                  className="text-sm font-medium text-foreground dark:text-default-200"
                                   htmlFor={`editing-exam-start-hour-${classroom.id}`}
                                 >
                                   Waktu Mulai
                                 </label>
                                 <div className="flex gap-2">
                                   <select
-                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                                     disabled={isSavingClassroom}
                                     id={`editing-exam-start-hour-${classroom.id}`}
                                     value={editingExamStartHour}
@@ -608,7 +608,7 @@ export const ClassroomSection = ({
                                     ))}
                                   </select>
                                   <select
-                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                                     disabled={isSavingClassroom}
                                     id={`editing-exam-start-minute-${classroom.id}`}
                                     value={editingExamStartMinute}
@@ -626,14 +626,14 @@ export const ClassroomSection = ({
                               </div>
                               <div className="flex flex-col gap-2">
                                 <label
-                                  className="text-sm font-medium text-default-700 dark:text-default-200"
+                                  className="text-sm font-medium text-foreground dark:text-default-200"
                                   htmlFor={`editing-exam-end-hour-${classroom.id}`}
                                 >
                                   Waktu Selesai
                                 </label>
                                 <div className="flex gap-2">
                                   <select
-                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                                     disabled={isSavingClassroom}
                                     id={`editing-exam-end-hour-${classroom.id}`}
                                     value={editingExamEndHour}
@@ -648,7 +648,7 @@ export const ClassroomSection = ({
                                     ))}
                                   </select>
                                   <select
-                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                                     disabled={isSavingClassroom}
                                     id={`editing-exam-end-minute-${classroom.id}`}
                                     value={editingExamEndMinute}
@@ -667,13 +667,13 @@ export const ClassroomSection = ({
                             </div>
                             <div className="flex flex-col gap-2">
                               <label
-                                className="text-sm font-medium text-default-700 dark:text-default-200"
+                                className="text-sm font-medium text-foreground dark:text-default-200"
                                 htmlFor={`editing-test-code-${classroom.id}`}
                               >
                                 Kode Testing
                               </label>
                               <textarea
-                                className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                                className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                                 disabled={isSavingClassroom}
                                 id={`editing-test-code-${classroom.id}`}
                                 placeholder="Kode untuk testing jawaban user"
@@ -704,7 +704,7 @@ export const ClassroomSection = ({
                         Belum ada tugas yang ditetapkan untuk classroom ini.
                       </p>
                     ) : (
-                      <ol className="mt-3 space-y-2 text-sm text-default-700 dark:text-default-200">
+                      <ol className="mt-3 space-y-2 text-sm text-foreground dark:text-default-200">
                         {classroom.tasks.map((task, index) => (
                           <li
                             key={`${classroom.id}-task-${index}`}
@@ -766,7 +766,7 @@ export const ClassroomSection = ({
                     </p>
                   ) : (
                     <div className="mt-3 overflow-x-auto">
-                      <table className="min-w-full divide-y divide-default-200 text-left text-sm text-default-700 dark:divide-default-100/20 dark:text-default-200">
+                      <table className="min-w-full divide-y divide-default-200 text-left text-sm text-foreground dark:divide-default-100/20 dark:text-default-200">
                         <thead className="bg-default-100 text-xs uppercase text-default-500 dark:bg-default-100/20 dark:text-default-300">
                           <tr>
                             <th className="px-3 py-2 font-semibold">Nama</th>
@@ -808,7 +808,7 @@ export const ClassroomSection = ({
                                 <td className="px-3 py-2 font-medium text-default-800 dark:text-default-200">
                                   <div className="space-y-2">
                                     <input
-                                      className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
+                                      className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
                                       disabled={isBusy}
                                       value={managedForm.name}
                                       onChange={(event) =>
@@ -829,7 +829,7 @@ export const ClassroomSection = ({
                                 </td>
                                 <td className="px-3 py-2 text-default-600 dark:text-default-300">
                                   <input
-                                    className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
+                                    className="w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/10 dark:text-default-100"
                                     disabled={isBusy}
                                     value={managedForm.npm}
                                     onChange={(event) =>
@@ -916,12 +916,12 @@ export const ClassroomSection = ({
                   )}
 
                   <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/50 p-4 dark:border-default-100/40 dark:bg-default-100/10">
-                    <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+                    <h4 className="text-sm font-semibold text-foreground dark:text-default-200">
                       Tambah User ke Classroom
                     </h4>
                     <div className="grid gap-3 md:grid-cols-2">
                       <input
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={classroomUserLoading[classroom.id]}
                         placeholder="Nama user"
                         value={classroomUserForms[classroom.id]?.name ?? ""}
@@ -932,7 +932,7 @@ export const ClassroomSection = ({
                         }
                       />
                       <input
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={classroomUserLoading[classroom.id]}
                         placeholder="NPM"
                         value={classroomUserForms[classroom.id]?.npm ?? ""}
@@ -999,19 +999,19 @@ export const ClassroomSection = ({
       </div>
 
       <div className="rounded-2xl border border-default-200 bg-default-100/40 p-5 dark:border-default-100/40 dark:bg-default-100/10">
-        <h3 className="text-sm font-semibold text-default-700 dark:text-default-200">
+        <h3 className="text-sm font-semibold text-foreground dark:text-default-200">
           Tambah Classroom
         </h3>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="flex flex-col gap-2">
             <label
-              className="text-sm font-medium text-default-700 dark:text-default-200"
+              className="text-sm font-medium text-foreground dark:text-default-200"
               htmlFor={newClassroomNameId}
             >
               Nama Classroom
             </label>
             <input
-              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
               disabled={isCreatingClassroom}
               id={newClassroomNameId}
               placeholder="Nama classroom"
@@ -1021,7 +1021,7 @@ export const ClassroomSection = ({
           </div>
           <div className="flex flex-col gap-2">
             <label
-              className="text-sm font-medium text-default-700 dark:text-default-200"
+              className="text-sm font-medium text-foreground dark:text-default-200"
               htmlFor="new-classroom-language"
             >
               Bahasa Pemrograman
@@ -1039,13 +1039,13 @@ export const ClassroomSection = ({
           </div>
           <div className="flex flex-col gap-2 md:col-span-2">
             <label
-              className="text-sm font-medium text-default-700 dark:text-default-200"
+              className="text-sm font-medium text-foreground dark:text-default-200"
               htmlFor="new-classroom-presetup-code"
             >
               Kode Awal (Presetup)
             </label>
             <textarea
-              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+              className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
               disabled={isCreatingClassroom}
               id="new-classroom-presetup-code"
               placeholder="Kode yang akan muncul di editor user saat login"
@@ -1061,7 +1061,7 @@ export const ClassroomSection = ({
           </div>
         </div>
         <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/60 p-4 dark:border-default-100/40 dark:bg-default-100/10">
-          <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+          <h4 className="text-sm font-semibold text-foreground dark:text-default-200">
             Daftar Tugas Classroom
           </h4>
           {renderTaskEditor("new-classroom-task", newClassroomTasks, {
@@ -1072,7 +1072,7 @@ export const ClassroomSection = ({
           })}
         </div>
         <div className="mt-4 space-y-3 rounded-2xl border border-default-200 bg-default-100/60 p-4 dark:border-default-100/40 dark:bg-default-100/10">
-          <h4 className="text-sm font-semibold text-default-700 dark:text-default-200">
+          <h4 className="text-sm font-semibold text-foreground dark:text-default-200">
             Pengaturan Ujian
           </h4>
           <div className="flex flex-col gap-3">
@@ -1097,13 +1097,13 @@ export const ClassroomSection = ({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <label
-                      className="text-sm font-medium text-default-700 dark:text-default-200"
+                      className="text-sm font-medium text-foreground dark:text-default-200"
                       htmlFor="new-classroom-exam-date"
                     >
                       Tanggal Ujian
                     </label>
                     <input
-                      className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                      className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                       disabled={isCreatingClassroom}
                       id="new-classroom-exam-date"
                       type="date"
@@ -1117,14 +1117,14 @@ export const ClassroomSection = ({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <label
-                      className="text-sm font-medium text-default-700 dark:text-default-200"
+                      className="text-sm font-medium text-foreground dark:text-default-200"
                       htmlFor="new-classroom-exam-start-hour"
                     >
                       Waktu Mulai
                     </label>
                     <div className="flex gap-2">
                       <select
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={isCreatingClassroom}
                         id="new-classroom-exam-start-hour"
                         value={newClassroomExamStartHour}
@@ -1139,7 +1139,7 @@ export const ClassroomSection = ({
                         ))}
                       </select>
                       <select
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={isCreatingClassroom}
                         id="new-classroom-exam-start-minute"
                         value={newClassroomExamStartMinute}
@@ -1157,14 +1157,14 @@ export const ClassroomSection = ({
                   </div>
                   <div className="flex flex-col gap-2">
                     <label
-                      className="text-sm font-medium text-default-700 dark:text-default-200"
+                      className="text-sm font-medium text-foreground dark:text-default-200"
                       htmlFor="new-classroom-exam-end-hour"
                     >
                       Waktu Selesai
                     </label>
                     <div className="flex gap-2">
                       <select
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={isCreatingClassroom}
                         id="new-classroom-exam-end-hour"
                         value={newClassroomExamEndHour}
@@ -1179,7 +1179,7 @@ export const ClassroomSection = ({
                         ))}
                       </select>
                       <select
-                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                        className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                         disabled={isCreatingClassroom}
                         id="new-classroom-exam-end-minute"
                         value={newClassroomExamEndMinute}
@@ -1198,13 +1198,13 @@ export const ClassroomSection = ({
                 </div>
                 <div className="flex flex-col gap-2">
                   <label
-                    className="text-sm font-medium text-default-700 dark:text-default-200"
+                    className="text-sm font-medium text-foreground dark:text-default-200"
                     htmlFor="new-classroom-test-code"
                   >
                     Kode Testing
                   </label>
                   <textarea
-                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-default-700 outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
+                    className="w-full rounded-2xl border border-default-200 bg-default-50 px-4 py-3 font-code text-sm text-foreground outline-none ring-2 ring-transparent transition focus:border-primary focus:ring-primary/40 dark:border-default-100/40 dark:bg-default-50/20 dark:text-default-200"
                     disabled={isCreatingClassroom}
                     id="new-classroom-test-code"
                     placeholder="Kode untuk testing jawaban user"
