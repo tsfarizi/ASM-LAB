@@ -1,4 +1,4 @@
-import { ApiAccount } from "./types";
+import { ApiAccount } from "./page";
 
 export const formatDateTime = (value: string) =>
   new Date(value).toLocaleString("id-ID", {

@@ -2,7 +2,7 @@ import { ChangeEvent } from "react";
 import { Button } from "@heroui/button";
 
 import { formatDateTime, roleLabel } from "../utils";
-import { ApiAccount } from "../types";
+import { ApiAccount } from "../page";
 
 type AccountSectionProps = {
   accounts: ApiAccount[];

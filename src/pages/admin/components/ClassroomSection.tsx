@@ -3,7 +3,7 @@ import { Button } from "@heroui/button";
 import { UserStatusToggle } from "./UserStatusToggle";
 
 import { formatDateTime } from "../utils";
-import { ApiClassroom, ClassroomUserForm, ManagedUserForm } from "../types";
+import { ApiClassroom, ClassroomUserForm, ManagedUserForm } from "../page";
 
 import { ExtendedLanguage } from "@/contexts/language-context";
 
@@ -161,7 +161,7 @@ export const ClassroomSection = ({
   onToggleNewClassroomLock,
   onChangeNewClassroomIsExam,
   onChangeNewClassroomTestCode,
-  onChangeNewClassroomTimeLimit,
+
   onChangeNewClassroomPresetupCode,
   onChangeNewClassroomExamDate,
   onChangeNewClassroomExamStartHour,
@@ -177,7 +177,7 @@ export const ClassroomSection = ({
   onToggleEditingLockLanguage,
   onChangeEditingIsExam,
   onChangeEditingTestCode,
-  onChangeEditingTimeLimit,
+
   onChangeEditingPresetupCode,
   onChangeEditingExamDate,
   onChangeEditingExamStartHour,

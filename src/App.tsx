@@ -82,10 +82,7 @@ const App = () => {
     }
   };
 
-  const handleResumeExam = () => {
-    setShowFullscreenModal(false);
-    enterFullscreen();
-  };
+
 
   return (
     <HashRouter>

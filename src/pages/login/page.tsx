@@ -16,7 +16,7 @@ export const LoginPage = () => {
   const [npm, setNpm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isExam, setIsExam] = useState(false);
+
   const [showExamStartButton, setShowExamStartButton] = useState(false);
 
   const redirectPath = useMemo(() => parseRedirect(location.search), [location.search]);
@@ -41,7 +41,7 @@ export const LoginPage = () => {
       setIsSubmitting(true);
       const response = await login({ npm: trimmed });
       if (response.classroom?.isExam) {
-        setIsExam(true);
+
         setShowExamStartButton(true);
       } else {
         navigate(redirectPath, { replace: true });

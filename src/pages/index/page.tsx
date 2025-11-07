@@ -40,7 +40,7 @@ type PreviewState = {
 export const IndexPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { account, classroom, syncClassroom, logout, isExamMode, enterFullscreen, setIsTimeUp, isTimeUp } = useAuth();
+  const { account, classroom, syncClassroom, logout, isExamMode, enterFullscreen, setIsTimeUp, isTimeUp, setLastCode } = useAuth();
   const { activeLanguage, languages, lockedLanguage, isLanguageLocked, setLanguageById } = 
     useLanguage();
 
@@ -355,6 +355,7 @@ export const IndexPage = () => {
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
+      const nextValue = event.target.value;
       setCode(nextValue);
       setLastCode(nextValue);
 
@@ -362,7 +363,7 @@ export const IndexPage = () => {
         window.localStorage.setItem(codeStorageKey, nextValue);
       }
     },
-    [codeStorageKey, isPreviewMode],
+    [codeStorageKey, isPreviewMode, setLastCode],
   );
 
   const handleKeyDown = useCallback(
@@ -406,7 +407,7 @@ export const IndexPage = () => {
         }
       });
     },
-    [code, codeStorageKey, isPreviewMode],
+    [code, codeStorageKey, isPreviewMode, setLastCode],
   );
 
   const instructions = classroomTasks;
