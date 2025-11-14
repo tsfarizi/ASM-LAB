@@ -17,8 +17,6 @@ export const LoginPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [showExamStartButton, setShowExamStartButton] = useState(false);
-
   const redirectPath = useMemo(() => parseRedirect(location.search), [location.search]);
 
   useEffect(() => {
@@ -41,8 +39,8 @@ export const LoginPage = () => {
       setIsSubmitting(true);
       const response = await login({ npm: trimmed });
       if (response.classroom?.isExam) {
-
-        setShowExamStartButton(true);
+        enterFullscreen();
+        navigate(redirectPath, { replace: true });
       } else {
         navigate(redirectPath, { replace: true });
       }
@@ -54,30 +52,17 @@ export const LoginPage = () => {
     }
   };
 
-  const handleStartExam = () => {
-    enterFullscreen();
-    navigate(redirectPath, { replace: true });
-  };
-
   return (
     <DefaultLayout>
       <section className="mx-auto flex min-h-[60vh] max-w-xl flex-col justify-center gap-6 py-16">
         <LoginHeader />
-        {showExamStartButton ? (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Ujian akan dimulai</h2>
-            <p className="text-lg">Klik tombol di bawah untuk masuk ke mode layar penuh dan memulai ujian.</p>
-            <button onClick={handleStartExam} className="mt-4 rounded-2xl bg-primary px-6 py-3 text-white">Mulai Ujian</button>
-          </div>
-        ) : (
-          <LoginForm
-            error={error}
-            isSubmitting={isSubmitting}
-            npm={npm}
-            onNpmChange={setNpm}
-            onSubmit={handleSubmit}
-          />
-        )}
+        <LoginForm
+          error={error}
+          isSubmitting={isSubmitting}
+          npm={npm}
+          onNpmChange={setNpm}
+          onSubmit={handleSubmit}
+        />
       </section>
     </DefaultLayout>
   );

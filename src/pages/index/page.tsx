@@ -69,6 +69,7 @@ export const IndexPage = () => {
   const [classroomTasksReloadToken, setClassroomTasksReloadToken] = useState(0);
 
   const [isExitConfirmVisible, setIsExitConfirmVisible] = useState(false);
+  const [isFinishingExam, setIsFinishingExam] = useState(false);
 
   useEffect(() => {
     if (hasPreviewState) {
@@ -582,7 +583,9 @@ export const IndexPage = () => {
   );
 
   const handleFinishExam = useCallback(async () => {
-    if (!isExamMode || !classroom?.id || !account?.npm || account.npm.trim() === '') return;
+    if (!isExamMode || !classroom?.id || !account?.npm || account.npm.trim() === "") return;
+
+    setIsFinishingExam(true);
 
     try {
       await fetch(`${API_BASE_URL}/api/classrooms/${classroom.id}/finish`, {
@@ -607,14 +610,15 @@ export const IndexPage = () => {
     }
   }, [isExamMode, classroom?.id, account?.npm, code, activeLanguage.id, logout]);
 
+  const finishExamHandlerRef = useRef(handleFinishExam);
+  finishExamHandlerRef.current = handleFinishExam;
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       // If user tries to exit fullscreen during an exam
       if (isExamMode && !document.fullscreenElement) {
-        // Re-enter fullscreen to prevent leaving
-        enterFullscreen();
-        // Show the custom confirmation modal
-        setIsExitConfirmVisible(true);
+        // Automatically finish the exam
+        finishExamHandlerRef.current();
       }
     };
 
@@ -623,7 +627,7 @@ export const IndexPage = () => {
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
-  }, [isExamMode, enterFullscreen]);
+  }, [isExamMode]);
 
   useEffect(() => {
     if (!classroom?.isExam || !account?.npm) {
@@ -733,7 +737,7 @@ export const IndexPage = () => {
         )}
               {isExitConfirmVisible && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
-                  <div className="w-full max-w-md rounded-2xl border border-transparent bg-white p-6 text-center shadow-xl dark:border-default-200 dark:bg-default-100">
+                  <div className="w-full max-w-md rounded-2xl border border-transparent p-6 text-center shadow-xl dark:border-default-200 dark:bg-default-800">
                     <h2 className="text-xl font-bold text-default-900 dark:text-default-50">
                       Konfirmasi Selesai Ujian
                     </h2>
@@ -742,13 +746,19 @@ export const IndexPage = () => {
                       dijalankan dan sesi akan berakhir.
                     </p>              <div className="mt-6 flex justify-center gap-4">
                 <Button
-                  variant="flat"
+                  variant="bordered"
                   onPress={() => setIsExitConfirmVisible(false)}
+                  disabled={isFinishingExam}
                 >
                   Batal
                 </Button>
-                <Button color="danger" variant="solid" onPress={handleFinishExam}>
-                  Ya, Selesaikan
+                <Button
+                  color="danger"
+                  variant="solid"
+                  onPress={handleFinishExam}
+                  disabled={isFinishingExam}
+                >
+                  {isFinishingExam ? "Memproses..." : "Ya, Selesaikan"}
                 </Button>
               </div>
             </div>
